@@ -7,7 +7,7 @@ pub struct HitRecord {
     pub distance        : f32,
     pub normal          : Vec3f,
     pub uv              : Vec3f,
-
+    pub value           : u8,
 }
 
 impl HitRecord {
@@ -18,6 +18,7 @@ impl HitRecord {
             distance    : 0.0,
             normal      : Vec3f::zero(),
             uv          : Vec3f::zero(),
+            value       : 0,
         }
     }
 }

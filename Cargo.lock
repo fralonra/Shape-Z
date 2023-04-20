@@ -882,9 +882,13 @@ dependencies = [
 
 [[package]]
 name = "maths-rs"
-version = "0.1.14"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3710e94d1f9b1a917b74231b64746876e3a3cce22353d99b77ec4bd4ff9b485f"
+checksum = "d51349880e8208eebd433445da4d747d172a317ede8228a5c2a265e3f3d43e23"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "memchr"

@@ -70,6 +70,19 @@ impl TheTrait for Editor {
         false
     }
 
+
+    /// Click / touch at the given position, check if we clicked inside the circle
+    fn touch_dragged(&mut self, x: f32, y: f32) -> bool {
+
+        if self.ui_drag && self.ui.touch_dragged(x, y, &mut self.context) {
+            self.process_cmds();
+            self.ui_drag = true;
+            true
+        } else {
+            false
+        }
+    }
+
     fn touch_up(&mut self, _x: f32, _y: f32) -> bool {
         false
     }

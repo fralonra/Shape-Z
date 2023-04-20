@@ -1,24 +1,85 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Tile {
-    pub camera              : Camera
+    pub camera              : OrbitCamera,
+    pub size                : usize,
+
+    pub data                : Vec<Option<u8>>,
 }
 
 impl Tile {
-    pub fn new() -> Self {
+    pub fn new(size: usize) -> Self {
+
+        let mut camera = OrbitCamera::new();
+        camera.center = Vec3f::new((size / 2) as f32, (size / 2) as f32, (size / 2) as f32);
+        camera.origin = camera.center;
+        camera.origin.z += 40.0;
+
+        let data = vec![Some(0); size * size * size];
+
         Self {
-            camera          : Camera::new(vec3f(0.0, 0.0, 5.0), Vec3f::zero(), 70.0),
+            camera          : camera,
+
+            data            : data,
+            size,
         }
     }
 
-    pub fn render(&self, buffer: &mut ColorBuffer) {
+    /// Index for a given voxel
+    fn index(&self, x: usize, y: usize, z: usize) -> usize {
+        x + y * self.size + z * self.size * self.size
+    }
+
+    /// Get a voxel
+    pub fn get_voxel(&self, x: usize, y: usize, z: usize) -> Option<u8> {
+        if x < self.size && y < self.size && z < self.size {
+            self.data[self.index(x, y, z)]
+        } else {
+            None
+        }
+    }
+
+    /// Sets a voxel
+    pub fn set_voxel(&mut self, x: usize, y: usize, z: usize, voxel: Option<u8>)  {
+        if x < self.size && y < self.size && z < self.size {
+            let index = self.index(x, y, z);
+            self.data[index] = voxel;
+        }
+    }
+
+    /// Resize the content to the new size
+    pub fn resize(&mut self, new_size: usize) {
+        let mut new_data = vec![None; new_size * new_size * new_size];
+
+        for z in 0..new_size {
+            for y in 0..new_size {
+                for x in 0..new_size {
+                    let old_x = x * self.size / new_size;
+                    let old_y = y * self.size / new_size;
+                    let old_z = z * self.size / new_size;
+
+                    let old_index = self.index(old_x, old_y, old_z);
+                    let new_index = x + y * new_size + z * new_size * new_size;
+
+                    new_data[new_index] = self.data[old_index];
+                }
+            }
+        }
+
+        self.size = new_size;
+        self.data = new_data;
+    }
+
+
+    pub fn render(&mut self, buffer: &mut ColorBuffer) {
 
         let width = buffer.width;
         let height = buffer.height as f32;
 
         let screen = vec2f(buffer.width as f32, buffer.height as f32);
+        self.camera.update();
 
         buffer.pixels
             .par_rchunks_exact_mut(width * 4)
@@ -34,10 +95,10 @@ impl Tile {
 
                     let ray = self.camera.create_ray(uv, screen);
 
-                    let mut color = [uv.x, uv.y, 0.0, 1.0];
+                    let mut color = [0.0, 0.0, 0.0, 1.0];
 
                     if let Some(hit) = self.dda(&ray) {
-                        color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
+                        color = [1.0, 0.0, 0.0, 1.0];
                     }
 
                     pixel.copy_from_slice(&color);
@@ -69,13 +130,15 @@ impl Tile {
         let rdi = 1.0 / (2.0 * rd);
         let mut hit = false;
 
-            //println!("{:?}", i);
+        let mut key = Vec3i::zero();
+        let mut value : u8 = 0;
 
-        for _ii in 0..20 {
+        for _ii in 0..100 {
 
-            let id: Vec3<i32> = Vec3i::from(i);
-            if id.x == -2 && id.y == 0 && id.z == 0 {
+            key = Vec3i::from(i);
+            if let Some(voxel) = self.get_voxel(key.x as usize, key.y as usize, key.z as usize) {
                 hit = true;
+                value = voxel;
                 break;
             }
 
@@ -91,6 +154,7 @@ impl Tile {
             hit_record.distance = dist;
             hit_record.hitpoint = ray.at(dist);
             hit_record.normal = normal;
+            hit_record.value = value;
 
             Some(hit_record)
         } else {

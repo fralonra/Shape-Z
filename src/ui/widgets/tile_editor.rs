@@ -9,6 +9,7 @@ pub struct TileEditor {
 
     palette_r                   : Rect,
 
+    buffer                      : ColorBuffer,
     widgets                     : Vec<Box<dyn Widget>>,
 
     visible                     : bool,
@@ -65,6 +66,8 @@ impl Widget for TileEditor {
 
             palette_r           : Rect::empty(),
 
+            buffer              : ColorBuffer::new(200, 200),
+
             widgets,
             visible             : false,
         }
@@ -88,6 +91,12 @@ impl Widget for TileEditor {
         // let y = r.1 + 10;
 
         ctx.draw.rounded_rect(pixels, &r, ctx.width, &context.color_widget, &(8.0, 8.0, 8.0, 8.0));
+
+        context.curr_tile.render(&mut self.buffer);
+
+        let preview = self.buffer.to_u8_vec();
+
+        ctx.draw.copy_slice(pixels, &preview, &(r.0 + 10, r.1 + 10, 200, 200), ctx.width);
         /*
         // Property
 
@@ -234,6 +243,9 @@ impl Widget for TileEditor {
         if self.visible == false { return false };
 
         if self.rect.is_inside((x as u32, y as u32)) {
+
+            context.curr_tile.camera.elevation += 10.0;
+
             /*
             if self.prop_r.is_inside((x as u32, y as u32)) {
 

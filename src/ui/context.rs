@@ -131,7 +131,7 @@ impl Context {
             color_widget        : [83, 83, 83, 255],
             color_text          : [244, 244, 244, 255],
 
-            curr_tile           : Tile::new(),
+            curr_tile           : Tile::new(9),
             curr_key            : None,
 
             cmd                 : None,

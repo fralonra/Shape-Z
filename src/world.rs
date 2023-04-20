@@ -13,9 +13,9 @@ impl World {
 
         let mut tiles  = FxHashMap::default();
 
-        tiles.insert((-1, 0, 0), Tile::new());
-        tiles.insert((0, 0, 0), Tile::new());
-        tiles.insert((1, 0, 0), Tile::new());
+        tiles.insert((-1, 0, 0), Tile::new(9));
+        tiles.insert((0, 0, 0), Tile::new(9));
+        tiles.insert((1, 0, 0), Tile::new(9));
 
         Self {
             camera          : Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0),
