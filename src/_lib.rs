@@ -5,6 +5,8 @@ use theframework::prelude::*;
 pub mod editor;
 pub mod ui;
 use crate::editor::Editor;
+pub mod buffer;
+pub mod world;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]

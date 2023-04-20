@@ -1,5 +1,8 @@
 use crate::prelude::*;
 
+pub mod text_button;
+pub mod tile_editor;
+
 #[allow(unused)]
 pub trait Widget : Sync + Send {
 
@@ -17,13 +20,13 @@ pub trait Widget : Sync + Send {
 
     fn update(&mut self, context: &mut Context) {}
 
-    //fn draw(&mut self, pixels: &mut [u8], context: &mut Context, render: &Renderer);
+    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext);
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
         false
     }
 
-    fn touch_down(&mut self, button: u32, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, button: i32, x: f32, y: f32, context: &mut Context) -> bool {
         false
     }
 

@@ -11,19 +11,25 @@ pub enum Mode {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Command {
+    None
 }
 
 pub struct Context {
     //pub shapes              : Vec<Tile>,
     //pub patterns            : Vec<Box<dyn Pattern>>,
 
-    pub width               : usize,
-    pub height              : usize,
+    pub width                   : usize,
+    pub height                  : usize,
 
-    pub color_button        : [u8;4],
-    pub color_widget        : [u8;4],
-    pub color_selected      : [u8;4],
-    pub color_text          : [u8;4],
+    pub color_button            : [u8;4],
+    pub color_widget            : [u8;4],
+    pub color_selected          : [u8;4],
+    pub color_text              : [u8;4],
+
+    pub curr_tile               : Tile,
+    pub curr_key                : Option<Vec3i>,
+
+    pub cmd                     : Option<Command>,
 
     /*
     pub curr_mode           : Mode,
@@ -40,8 +46,6 @@ pub struct Context {
 
     pub font                : Option<Font>,
     pub icons               : FxHashMap<String, (Vec<u8>, u32, u32)>,
-
-    pub cmd                 : Option<Command>,
 
     pub palette             : Palette,*/
 }
@@ -119,13 +123,18 @@ impl Context {
             // shapes,
             // patterns,
 
-            width           : 0,
-            height          : 0,
+            width               : 0,
+            height              : 0,
 
-            color_button    : [53, 53, 53, 255],
-            color_selected  : [135, 135, 135, 255],
-            color_widget    : [83, 83, 83, 255],
-            color_text      : [244, 244, 244, 255],
+            color_button        : [53, 53, 53, 255],
+            color_selected      : [135, 135, 135, 255],
+            color_widget        : [83, 83, 83, 255],
+            color_text          : [244, 244, 244, 255],
+
+            curr_tile           : Tile::new(),
+            curr_key            : None,
+
+            cmd                 : None,
 
             // curr_mode       : Mode::InsertShape,
             // curr_shape      : 0,
@@ -143,7 +152,6 @@ impl Context {
             // font,
             // icons,
 
-            // cmd             : None,
             // palette,
         }
     }

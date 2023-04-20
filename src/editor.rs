@@ -3,72 +3,91 @@ use crate::prelude::*;
 
 pub struct Editor {
 
+    ui                  : UI,
     context             : Context,
 
-    circle_x            : usize,
-    circle_y            : usize,
+    world               : World,
+    buffer              : ColorBuffer,
 
-    radius              : usize,
-
-    clicked             : bool,
+    ui_drag             : bool,
 }
 
 impl TheTrait for Editor {
     fn new() -> Self where Self: Sized {
         Self {
 
+            ui          : UI::new(),
             context     : Context::new(),
 
-            circle_x    : 0,
-            circle_y    : 0,
-            radius      : 200,
+            world       : World::new(),
+            buffer      : ColorBuffer::new(10, 10),
 
-            clicked     : false,
+            ui_drag     : false,
         }
     }
 
     /// Draw a circle in the middle of the window
     fn draw(&mut self, pixels: &mut [u8], ctx: &TheContext) {
 
-        let color = if self.clicked { [255, 0, 0, 255] } else { [255, 255, 255, 255] };
+        self.context.width = ctx.width;
+        self.context.height = ctx.height;
 
-        self.circle_x = ctx.width / 2;
-        self.circle_y = ctx.height / 2;
+        if self.buffer.width != ctx.width || self.buffer.height != ctx.height {
+            self.buffer = ColorBuffer::new(ctx.width, ctx.height);
+        }
 
-        ctx.draw.rect(pixels, &(0, 0, ctx.width, ctx.height), ctx.width, &[0, 0, 0, 255]);
-        ctx.draw.circle(pixels,
-            &(self.circle_x - self.radius, self.circle_y - self.radius, self.radius * 2, self.radius * 2), ctx.width,
-            &color,
-            self.radius);
+        self.world.render(&mut self.buffer);
+        self.buffer.convert_to_u8(pixels);
+
+        self.ui.draw(pixels, &mut self.context, &self.world, ctx);
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_down(&mut self, x: f32, y: f32) -> bool {
+    fn touch_down(&mut self, button: i32, x: f32, y: f32) -> bool {
 
-        /// Length of a 2d vector
-        #[inline(always)]
-        fn length(v: (f32, f32)) -> f32 {
-            ((v.0).powf(2.0) + (v.1).powf(2.0)).sqrt()
-        }
-
-        let dist = length((x - self.circle_x as f32, y - self.circle_y as f32)) - self.radius as f32;
-
-        if dist <= 0.0 {
-            // Clicked inside
-            self.clicked = true;
+        self.ui_drag = false;
+        if self.ui.touch_down(button, x, y, &mut self.context) {
+            self.process_cmds();
+            self.ui_drag = true;
+            return true;
         } else {
-            self.clicked = false;
+            if let Some(key) = self.world.key_at(vec2f(x, y), &self.buffer) {
+                if Some(key) != self.context.curr_key {
+                    if let Some(tile) = self.world.get_tile(key) {
+                        self.context.curr_tile = tile;
+                        self.context.curr_key = Some(key);
+                        return true;
+                    }
+                }
+            } else {
+                if self.context.curr_key.is_some() {
+                    self.context.curr_key = None;
+                    return true;
+                }
+            }
         }
 
-        true
+        false
     }
 
     fn touch_up(&mut self, _x: f32, _y: f32) -> bool {
-        self.clicked = false;
-        true
+        false
     }
 
-    /// Update the app state
-    fn update(&mut self) {
+
+}
+
+pub trait AddEditor {
+    fn process_cmds(&mut self);
+}
+
+impl AddEditor for Editor {
+    /// Process possible UI commands
+    fn process_cmds(&mut self) {
+        if let Some(cmd) = &self.context.cmd {
+            match cmd {
+                _ => {}
+            }
+        }
     }
 }
