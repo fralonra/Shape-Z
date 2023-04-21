@@ -15,7 +15,7 @@ impl Tile {
         let mut camera = OrbitCamera::new();
         camera.center = Vec3f::new((size / 2) as f32, (size / 2) as f32, (size / 2) as f32);
         camera.origin = camera.center;
-        camera.origin.z += 40.0;
+        camera.origin.z += 20.0;
 
         let data = vec![Some(0); size * size * size];
 
@@ -133,7 +133,7 @@ impl Tile {
         let mut key = Vec3i::zero();
         let mut value : u8 = 0;
 
-        for _ii in 0..100 {
+        for _ii in 0..60 {
 
             key = Vec3i::from(i);
             if let Some(voxel) = self.get_voxel(key.x as usize, key.y as usize, key.z as usize) {

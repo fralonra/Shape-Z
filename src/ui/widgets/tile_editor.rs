@@ -12,7 +12,7 @@ pub struct TileEditor {
     buffer                      : ColorBuffer,
     widgets                     : Vec<Box<dyn Widget>>,
 
-    visible                     : bool,
+    pub tile_needs_update       : bool,
 }
 
 impl Widget for TileEditor {
@@ -66,10 +66,11 @@ impl Widget for TileEditor {
 
             palette_r           : Rect::empty(),
 
-            buffer              : ColorBuffer::new(200, 200),
+            buffer              : ColorBuffer::new(280, 280),
 
             widgets,
-            visible             : false,
+
+            tile_needs_update   : false,
         }
     }
 
@@ -78,25 +79,25 @@ impl Widget for TileEditor {
     }
 
     fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
-        if self.visible == false { return };
+        //if self.visible == false { return };
 
         let r = self.rect.to_usize();
+        ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
 
-        // let property_dim = context.curr_property().dimension as usize;
-        // let available_width = r.2 - 20;
+        if context.curr_key.is_none() { return; }
 
-        // let pixel_size = (available_width - property_dim) / (property_dim);
+        let tile_size = r.2 - 20;
 
-        // let x = r.0 + 10 + (available_width - pixel_size * property_dim - property_dim) / 2;
-        // let y = r.1 + 10;
+        if tile_size != self.buffer.width || tile_size != self.buffer.height {
+            self.buffer = ColorBuffer::new(tile_size, tile_size);
+            self.tile_needs_update = true;
+        }
 
-        ctx.draw.rounded_rect(pixels, &r, ctx.width, &context.color_widget, &(8.0, 8.0, 8.0, 8.0));
-
-        context.curr_tile.render(&mut self.buffer);
-
-        let preview = self.buffer.to_u8_vec();
-
-        ctx.draw.copy_slice(pixels, &preview, &(r.0 + 10, r.1 + 10, 200, 200), ctx.width);
+        if self.tile_needs_update {
+            context.curr_tile.render(&mut self.buffer);
+            self.tile_needs_update = false;
+        }
+        self.buffer.convert_to_u8_at(pixels, (r.0 + 10, r.1 + 10, ctx.width, ctx.height));
         /*
         // Property
 
@@ -183,8 +184,7 @@ impl Widget for TileEditor {
         }
     }
 
-    fn touch_down(&mut self, button: i32, x: f32, y: f32, context: &mut Context) -> bool {
-        if self.visible == false { return false };
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
         if self.rect.is_inside((x as u32, y as u32)) {
             /*
@@ -230,7 +230,7 @@ impl Widget for TileEditor {
             }*/
 
             for w in &mut self.widgets {
-                _ = w.touch_down(button, x, y, context);
+                _ = w.touch_down(x, y, context);
             }
             true
         } else {
@@ -240,11 +240,11 @@ impl Widget for TileEditor {
     }
 
     fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
-        if self.visible == false { return false };
 
         if self.rect.is_inside((x as u32, y as u32)) {
 
             context.curr_tile.camera.elevation += 10.0;
+            self.tile_needs_update = true;
 
             /*
             if self.prop_r.is_inside((x as u32, y as u32)) {
@@ -278,7 +278,6 @@ impl Widget for TileEditor {
     }
 
     fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
-        if self.visible == false { return false };
 
         let mut consumed = false;
         for w in &mut self.widgets {
@@ -287,13 +286,8 @@ impl Widget for TileEditor {
         consumed
     }
 
-    fn update(&mut self, context: &mut Context) {
-    }
-
-    fn is_visible(&self) -> bool { return self.visible; }
-
-    fn set_visible(&mut self, visible: bool) {
-        self.visible = visible;
+    fn update(&mut self, _context: &mut Context) {
+        self.tile_needs_update = true;
     }
 
 }

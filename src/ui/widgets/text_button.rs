@@ -68,7 +68,7 @@ impl Widget for TextButton {
         }
     }
 
-    fn touch_down(&mut self, _button: i32, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
         if self.rect.is_inside((x as u32, y as u32)) {
             context.cmd = self.cmd.clone();

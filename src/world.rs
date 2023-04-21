@@ -5,7 +5,8 @@ use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIte
 pub struct World {
     pub camera              : Camera,
 
-    pub tiles               : FxHashMap<(i32, i32, i32), Tile>
+    pub tiles               : FxHashMap<(i32, i32, i32), Tile>,
+    pub needs_update        : bool,
 }
 
 impl World {
@@ -21,6 +22,7 @@ impl World {
             camera          : Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0),
 
             tiles,
+            needs_update    : true,
         }
     }
 

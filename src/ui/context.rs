@@ -128,7 +128,7 @@ impl Context {
 
             color_button        : [53, 53, 53, 255],
             color_selected      : [135, 135, 135, 255],
-            color_widget        : [83, 83, 83, 255],
+            color_widget        : [24, 24, 24, 255],
             color_text          : [244, 244, 244, 255],
 
             curr_tile           : Tile::new(9),

@@ -23,7 +23,12 @@ pub use crate::prelude::*;
 const BROWSER_HEIGHT : usize = 120;
 
 pub struct UI {
-    widgets                 : Vec<Box<dyn Widget>>,
+
+    widgets                         : Vec<Box<dyn Widget>>,
+
+    pub tile_editor_width           : usize,
+    tile_editor_drag_rect           : Rect,
+    pub tile_editor_drag_start      : Option<(usize, usize)>,
 }
 
 impl UI {
@@ -46,13 +51,18 @@ impl UI {
         // widgets.push(property);
 
         Self {
-            widgets
+            widgets,
+
+            tile_editor_width       : 300,
+            tile_editor_drag_rect   : Rect::empty(),
+            tile_editor_drag_start  : None,
+
         }
     }
 
     pub fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
 
-        self.widgets[TileEditorIndex as usize].set_visible(context.curr_key.is_some());
+        //self.widgets[TileEditorIndex as usize].set_visible(context.curr_key.is_some());
 
         /*
         self.widgets[3].set_visible(context.selected_pos.is_some() && context.selected_id.is_some());
@@ -63,7 +73,22 @@ impl UI {
         self.widgets[3].set_rect(Rect::new((context.width - 260) as u32, 100, 250, 400));
         */
 
-        self.widgets[TileEditorIndex as usize].set_rect(Rect::new((context.width - 260) as u32, 100, 250, 400));
+        // Tile editor rects
+
+        let mut tile_editor_rect = Rect::new((context.width - self.tile_editor_width) as u32, 0, self.tile_editor_width as u32, context.height as u32);
+
+        self.widgets[TileEditorIndex as usize].set_rect(tile_editor_rect.clone());
+        tile_editor_rect.x -= 20;
+        tile_editor_rect.width = 15;
+        tile_editor_rect.height = 100;
+        tile_editor_rect.y = (context.height as u32 - 50) / 2;
+        self.tile_editor_drag_rect = tile_editor_rect;
+
+        let drag_color = if self.tile_editor_drag_start.is_some() { [255, 255, 255, 255] } else { [0, 0, 0, 255] };
+
+        ctx.draw.rounded_rect(pixels, &self.tile_editor_drag_rect.to_usize(), ctx.width, &drag_color, &(8.0, 8.0, 8.0, 8.0));
+
+        // ---
 
         for w in &mut self.widgets {
             w.draw(pixels, context, world, ctx);
@@ -79,10 +104,16 @@ impl UI {
         false
     }
 
-    pub fn touch_down(&mut self, button: i32, x: f32, y: f32, context: &mut Context) -> bool {
+    pub fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+
+        if self.tile_editor_drag_rect.is_inside((x as u32, y as u32)) {
+            let offset = x as usize - (context.width - self.tile_editor_width as usize);
+            self.tile_editor_drag_start = Some((offset, self.tile_editor_width as usize));
+            return true;
+        }
 
         for w in &mut self.widgets {
-            if w.touch_down(button, x, y, context) {
+            if w.touch_down(x, y, context) {
                 return true;
             }
         }
@@ -91,6 +122,25 @@ impl UI {
     }
 
     pub fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+
+        if let Some(tile_editor_drag) = &self.tile_editor_drag_start {
+
+            if context.width > x as usize {
+                let mut new_width = (context.width - x as usize) +  tile_editor_drag.0;
+
+                if new_width < 300 { new_width = 300; }
+                else
+                if new_width > context.height - 20 {
+                    new_width = context.height - 20;
+                } else
+                if new_width > context.width - 200 {
+                    new_width = context.width - 200;
+                }
+
+                self.tile_editor_width = new_width + tile_editor_drag.0;
+                return true;
+            }
+        }
 
         for w in &mut self.widgets {
             if w.touch_dragged(x, y, context) {
@@ -103,13 +153,20 @@ impl UI {
 
     pub fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
+        let mut consumed = false;
+
+        if self.tile_editor_drag_start.is_some() {
+            self.tile_editor_drag_start = None;
+            consumed = true;
+        }
+
         for w in &mut self.widgets {
             if w.touch_up(x, y, context) {
-                return true;
+                consumed = true;
             }
         }
 
-        false
+        consumed
     }
 
     pub fn update(&mut self, context: &mut Context) {

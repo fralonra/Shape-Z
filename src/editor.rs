@@ -32,21 +32,31 @@ impl TheTrait for Editor {
         self.context.width = ctx.width;
         self.context.height = ctx.height;
 
-        if self.buffer.width != ctx.width || self.buffer.height != ctx.height {
-            self.buffer = ColorBuffer::new(ctx.width, ctx.height);
+        // Make sure world has the correct size
+        let world_width = ctx.width - self.ui.tile_editor_width;
+        let world_height = ctx.height;
+
+        if self.buffer.width != world_width|| self.buffer.height != world_height {
+            self.buffer = ColorBuffer::new(world_width, world_height);
+            self.world.needs_update = true;
         }
 
-        self.world.render(&mut self.buffer);
-        self.buffer.convert_to_u8(pixels);
+        // Render world
+        if self.world.needs_update {
+            self.world.render(&mut self.buffer);
+            self.world.needs_update = false;
+        }
+        self.buffer.convert_to_u8_at(pixels, (0, 0, ctx.width, ctx.height));
 
+        // Draw UI
         self.ui.draw(pixels, &mut self.context, &self.world, ctx);
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_down(&mut self, button: i32, x: f32, y: f32) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32) -> bool {
 
         self.ui_drag = false;
-        if self.ui.touch_down(button, x, y, &mut self.context) {
+        if self.ui.touch_down(x, y, &mut self.context) {
             self.process_cmds();
             self.ui_drag = true;
             return true;
@@ -56,6 +66,7 @@ impl TheTrait for Editor {
                     if let Some(tile) = self.world.get_tile(key) {
                         self.context.curr_tile = tile;
                         self.context.curr_key = Some(key);
+                        self.ui.update(&mut self.context);
                         return true;
                     }
                 }
@@ -83,8 +94,15 @@ impl TheTrait for Editor {
         }
     }
 
-    fn touch_up(&mut self, _x: f32, _y: f32) -> bool {
-        false
+    fn touch_up(&mut self, x: f32, y: f32) -> bool {
+        self.ui_drag = false;
+
+        if self.ui.touch_up(x, y, &mut self.context) {
+            self.process_cmds();
+            true
+        } else {
+            false
+        }
     }
 
 
