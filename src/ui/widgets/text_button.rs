@@ -61,7 +61,7 @@ impl Widget for TextButton {
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
-        if self.rect.is_inside((x as u32, y as u32)) {
+        if self.rect.is_inside((x as usize, y as usize)) {
             true
         } else {
             false
@@ -70,7 +70,7 @@ impl Widget for TextButton {
 
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        if self.rect.is_inside((x as u32, y as u32)) {
+        if self.rect.is_inside((x as usize, y as usize)) {
             context.cmd = self.cmd.clone();
             if self.has_state {
                 self.state = !self.state;

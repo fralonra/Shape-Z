@@ -59,7 +59,7 @@ impl World {
 
                     let uv = vec2f(x / width as f32, 1.0 - (y / height));
 
-                    let ray = self.camera.create_ray(uv, screen);
+                    let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
                     let mut color = [uv.x, uv.y, 0.0, 1.0];
 
@@ -81,7 +81,7 @@ impl World {
 
         let uv = vec2f(x as f32, 1.0 - y);
 
-        let ray = self.camera.create_ray(uv, screen);
+        let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
         if let Some(hit) = self.dda(&ray) {
             //println!("{:?}", hit.key);

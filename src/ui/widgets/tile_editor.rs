@@ -4,10 +4,10 @@ use crate::prelude::*;
 pub struct TileEditor {
     rect                        : Rect,
 
-    prop_r                      : Rect,
-    prop_pixel_size             : usize,
-
+    voxels_r                    : Rect,
     palette_r                   : Rect,
+
+    cam_orbit_drag              : Option<(f32, f32, f32, f32)>,
 
     buffer                      : ColorBuffer,
     widgets                     : Vec<Box<dyn Widget>>,
@@ -61,10 +61,10 @@ impl Widget for TileEditor {
         Self {
             rect                : Rect::empty(),
 
-            prop_r              : Rect::empty(),
-            prop_pixel_size     : 0,
-
+            voxels_r            : Rect::empty(),
             palette_r           : Rect::empty(),
+
+            cam_orbit_drag      : None,
 
             buffer              : ColorBuffer::new(280, 280),
 
@@ -79,7 +79,6 @@ impl Widget for TileEditor {
     }
 
     fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
-        //if self.visible == false { return };
 
         let r = self.rect.to_usize();
         ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
@@ -98,6 +97,7 @@ impl Widget for TileEditor {
             self.tile_needs_update = false;
         }
         self.buffer.convert_to_u8_at(pixels, (r.0 + 10, r.1 + 10, ctx.width, ctx.height));
+        self.voxels_r = Rect::new(r.0 + 10, r.1 + 10, tile_size, tile_size);
         /*
         // Property
 
@@ -177,7 +177,7 @@ impl Widget for TileEditor {
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
-        if self.rect.is_inside((x as u32, y as u32)) {
+        if self.rect.is_inside((x as usize, y as usize)) {
             true
         } else {
             false
@@ -185,8 +185,20 @@ impl Widget for TileEditor {
     }
 
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+        if context.curr_key.is_none() { return false; }
 
-        if self.rect.is_inside((x as u32, y as u32)) {
+        if self.rect.is_inside((x as usize, y as usize)) {
+
+            if self.voxels_r.is_inside((x as usize, y as usize)) {
+                let x = x - self.voxels_r.x as f32;
+                let y = y - self.voxels_r.y as f32;
+
+                let key = context.curr_tile.key_at(vec2f(x, y), &self.buffer);
+                println!("key {:?}", key);
+            }
+
+            self.cam_orbit_drag = Some((x, y, context.curr_tile.camera.azimuth, context.curr_tile.camera.elevation));
+
             /*
             // Property
             if self.prop_r.is_inside((x as u32, y as u32)) {
@@ -241,10 +253,15 @@ impl Widget for TileEditor {
 
     fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        if self.rect.is_inside((x as u32, y as u32)) {
+        if self.rect.is_inside((x as usize, y as usize)) {
 
-            context.curr_tile.camera.elevation += 10.0;
-            self.tile_needs_update = true;
+            if let Some(cam_drag) = self.cam_orbit_drag {
+
+                context.curr_tile.camera.azimuth = cam_drag.2 + (cam_drag.0 - x);
+                context.curr_tile.camera.elevation = cam_drag.1 + (cam_drag.1 - y);
+
+                self.tile_needs_update = true;
+            }
 
             /*
             if self.prop_r.is_inside((x as u32, y as u32)) {
@@ -278,6 +295,8 @@ impl Widget for TileEditor {
     }
 
     fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+
+        self.cam_orbit_drag = None;
 
         let mut consumed = false;
         for w in &mut self.widgets {

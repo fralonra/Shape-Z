@@ -31,6 +31,8 @@ pub struct Context {
 
     pub cmd                     : Option<Command>,
 
+    pub palette                 : Palette,
+
     /*
     pub curr_mode           : Mode,
     pub curr_perspective    : Perspective,
@@ -53,6 +55,8 @@ pub struct Context {
 impl Context {
 
     pub fn new() -> Self {
+
+        let mut palette = Palette::new();
 
         // Load Font
 
@@ -81,6 +85,14 @@ impl Context {
                         let mut cut_name = name.replace("icons/", "");
                         cut_name = cut_name.replace(".png", "");
                         icons.insert(cut_name.to_string(), (bytes.to_vec(), info.width, info.height));
+                    }
+                }
+            } else {
+                if name == "aurora.txt" {
+                    if let Some(bytes) = Embedded::get(name) {
+                        if let Some(string) = std::str::from_utf8(bytes.data.as_ref()).ok() {
+                            palette.load_from_txt(string.to_string())
+                        }
                     }
                 }
             }
@@ -135,6 +147,8 @@ impl Context {
             curr_key            : None,
 
             cmd                 : None,
+
+            palette
 
             // curr_mode       : Mode::InsertShape,
             // curr_shape      : 0,

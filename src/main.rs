@@ -10,6 +10,7 @@ pub mod world;
 pub mod camera;
 pub mod buffer;
 pub mod tile;
+pub mod palette;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -41,6 +42,7 @@ pub mod prelude {
     pub use crate::camera::*;
     pub use crate::buffer::ColorBuffer;
     pub use crate::tile::Tile;
+    pub use crate::palette::Palette;
 }
 
 use prelude::*;

@@ -39,7 +39,7 @@ impl Camera {
     }
 
     /// Create a pinhole ray
-    pub fn create_ray(&self, uv: Vec2f, screen: Vec2f) -> Ray {
+    pub fn create_ray(&self, uv: Vec2f, screen: Vec2f, offset: Vec2f) -> Ray {
         let ratio = screen.x / screen.y;
         let pixel_size = vec2f(1.0 / screen.x, 1.0 / screen.y);
 
@@ -56,10 +56,9 @@ impl Camera {
         let horizontal = u * half_width * 2.0;
         let vertical = v * half_height * 2.0;
         let mut dir = lower_left - self.origin;
-        let rand = vec2f(0.5, 0.5);
 
-        dir += horizontal * (pixel_size.x * rand.x + uv.x);
-        dir += vertical * (pixel_size.y * rand.y + uv.y);
+        dir += horizontal * (pixel_size.x * offset.x + uv.x);
+        dir += vertical * (pixel_size.y * offset.y + uv.y);
 
         Ray::new(self.origin, normalize(dir))
     }
@@ -103,7 +102,7 @@ impl OrbitCamera {
     }
 
     /// Create a pinhole ray
-    pub fn create_ray(&self, uv: Vec2f, screen: Vec2f) -> Ray {
+    pub fn create_ray(&self, uv: Vec2f, screen: Vec2f, offset: Vec2f) -> Ray {
         let ratio = screen.x / screen.y;
         let pixel_size = vec2f(1.0 / screen.x, 1.0 / screen.y);
 
@@ -120,10 +119,9 @@ impl OrbitCamera {
         let horizontal = u * half_width * 2.0;
         let vertical = v * half_height * 2.0;
         let mut dir = lower_left - self.origin;
-        let rand = vec2f(0.5, 0.5);
 
-        dir += horizontal * (pixel_size.x * rand.x + uv.x);
-        dir += vertical * (pixel_size.y * rand.y + uv.y);
+        dir += horizontal * (pixel_size.x * offset.x + uv.x);
+        dir += vertical * (pixel_size.y * offset.y + uv.y);
 
         Ray::new(self.origin, normalize(dir))
     }

@@ -75,13 +75,13 @@ impl UI {
 
         // Tile editor rects
 
-        let mut tile_editor_rect = Rect::new((context.width - self.tile_editor_width) as u32, 0, self.tile_editor_width as u32, context.height as u32);
+        let mut tile_editor_rect = Rect::new((context.width - self.tile_editor_width), 0, self.tile_editor_width, context.height);
 
         self.widgets[TileEditorIndex as usize].set_rect(tile_editor_rect.clone());
         tile_editor_rect.x -= 20;
         tile_editor_rect.width = 15;
         tile_editor_rect.height = 100;
-        tile_editor_rect.y = (context.height as u32 - 50) / 2;
+        tile_editor_rect.y = (context.height - 50) / 2;
         self.tile_editor_drag_rect = tile_editor_rect;
 
         let drag_color = if self.tile_editor_drag_start.is_some() { [255, 255, 255, 255] } else { [0, 0, 0, 255] };
@@ -106,7 +106,7 @@ impl UI {
 
     pub fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        if self.tile_editor_drag_rect.is_inside((x as u32, y as u32)) {
+        if self.tile_editor_drag_rect.is_inside((x as usize, y as usize)) {
             let offset = x as usize - (context.width - self.tile_editor_width as usize);
             self.tile_editor_drag_start = Some((offset, self.tile_editor_width as usize));
             return true;

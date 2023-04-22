@@ -13,7 +13,10 @@ impl Tile {
     pub fn new(size: usize) -> Self {
 
         let mut camera = OrbitCamera::new();
-        camera.center = Vec3f::new((size / 2) as f32, (size / 2) as f32, (size / 2) as f32);
+
+        let m = (size / 2) as f32 + 0.5;
+
+        camera.center = Vec3f::new(m, m, m);
         camera.origin = camera.center;
         camera.origin.z += 20.0;
 
@@ -93,17 +96,85 @@ impl Tile {
 
                     let uv = vec2f(x / width as f32, 1.0 - (y / height));
 
-                    let ray = self.camera.create_ray(uv, screen);
+                    let aa = 1;
+                    let mut total = [0.0, 0.0, 0.0, 0.0];
 
-                    let mut color = [0.0, 0.0, 0.0, 1.0];
+                    for m in 0..aa {
+                        for n in 0..aa {
 
-                    if let Some(hit) = self.dda(&ray) {
-                        color = [1.0, 0.0, 0.0, 1.0];
+                            let cam_offset = Vec2f::new(m as f32 / aa as f32, n as f32 / aa as f32) - Vec2f::new(0.5, 0.5);
+
+                            let ray = self.camera.create_ray(uv, screen, cam_offset);
+
+                            let mut color = [24.0 / 255.0, 24.0 / 255.0, 24.0 / 255.0, 1.0];
+
+                            if let Some(hit) = self.dda(&ray) {
+
+                                let c1;
+                                let c2;
+
+                                if hit.normal.y.abs() > 0.5 {
+                                    c1 = (hit.hitpoint.x * std::f32::consts::PI * 2.0).cos();
+                                    c2 = (hit.hitpoint.z * std::f32::consts::PI * 2.0).cos();
+                                } else
+                                if hit.normal.z.abs() > 0.5 {
+                                    c1 = (hit.hitpoint.x * std::f32::consts::PI * 2.0).cos();
+                                    c2 = (hit.hitpoint.y * std::f32::consts::PI * 2.0).cos();
+                                } else {
+                                    c1 = (hit.hitpoint.y * std::f32::consts::PI * 2.0).cos();
+                                    c2 = (hit.hitpoint.z * std::f32::consts::PI * 2.0).cos();
+                                }
+
+                                let v = smoothstep(0.95, 1.0, c1.max(c2));
+
+                                #[inline(always)]
+                                pub fn mix_color(a: &[f32], b: &[f32], v: f32) -> [f32; 4] {
+                                    [   (1.0 - v) * a[0] + b[0] * v,
+                                        (1.0 - v) * a[1] + b[1] * v,
+                                        (1.0 - v) * a[2] + b[2] * v,
+                                        (1.0 - v) * a[3] + b[3] * v ]
+                                }
+
+                                color = [0.0, 0.5, 1.0, 1.0];
+                                let highlight: [f32; 4] = [0.3, 0.3, 0.3, 1.0];
+                                color = mix_color(&color, &highlight, v);
+                            }
+
+                            total[0] += color[0];
+                            total[1] += color[1];
+                            total[2] += color[2];
+                            total[3] += color[3];
+                        }
+
+                        let aa_aa = aa as f32 * aa as f32;
+                        total[0] /= aa_aa;
+                        total[1] /= aa_aa;
+                        total[2] /= aa_aa;
+                        total[3] /= aa_aa;
+
+                        pixel.copy_from_slice(&total);
                     }
-
-                    pixel.copy_from_slice(&color);
                 }
         });
+    }
+
+    pub fn key_at(&self, pos: Vec2f, buffer: &ColorBuffer) -> Option<Vec3i> {
+
+        let x: f32 = pos.x / buffer.width as f32;
+        let y: f32 = pos.y / buffer.height as f32;
+
+        let screen = vec2f(buffer.width as f32, buffer.height as f32);
+
+        let uv = vec2f(x as f32, 1.0 - y);
+
+        let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
+
+        if let Some(hit) = self.dda(&ray) {
+            //println!("{:?}", hit.key);
+            Some(hit.key)
+        } else {
+            None
+        }
     }
 
     fn dda(&self, ray: &Ray) -> Option<HitRecord> {
@@ -133,7 +204,7 @@ impl Tile {
         let mut key = Vec3i::zero();
         let mut value : u8 = 0;
 
-        for _ii in 0..60 {
+        for _ii in 0..40 {
 
             key = Vec3i::from(i);
             if let Some(voxel) = self.get_voxel(key.x as usize, key.y as usize, key.z as usize) {
@@ -155,6 +226,7 @@ impl Tile {
             hit_record.hitpoint = ray.at(dist);
             hit_record.normal = normal;
             hit_record.value = value;
+            hit_record.key = key;
 
             Some(hit_record)
         } else {
