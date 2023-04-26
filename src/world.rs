@@ -40,7 +40,7 @@ impl World {
         self.tiles.insert((at.x, at.y, at.z), tile);
     }
 
-    pub fn render(&self, buffer: &mut ColorBuffer) {
+    pub fn render(&self, buffer: &mut ColorBuffer, context: &Context) {
 
         let width = buffer.width;
         let height = buffer.height as f32;
@@ -63,8 +63,9 @@ impl World {
 
                     let mut color = [uv.x, uv.y, 0.0, 1.0];
 
-                    if let Some(hit) = self.dda(&ray) {
-                        color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
+                    if let Some(hit) = self.dda_recursive(&ray) {
+                        //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
+                        color = context.palette.at_f(hit.value);
                     }
 
                     pixel.copy_from_slice(&color);
@@ -84,7 +85,7 @@ impl World {
         let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
         if let Some(hit) = self.dda(&ray) {
-            //println!("{:?}", hit.key);
+            println!("{:?}", hit.key);
             Some(hit.key)
         } else {
             None
@@ -162,6 +163,67 @@ impl World {
         vec3 position = ro+rd*dist;
         return hit(normal, dist, position);*/
 
+    }
+
+    fn dda_recursive(&self, ray: &Ray) -> Option<HitRecord> {
+
+        // Based on https://www.shadertoy.com/view/ct33Rn
+
+        fn equal(l: f32, r: Vec3f) -> Vec3f {
+            vec3f(
+                if l == r.x { 1.0 } else { 0.0 },
+                if l == r.y { 1.0 } else { 0.0 },
+                if l == r.z { 1.0 } else { 0.0 },
+            )
+        }
+
+        let ro = ray.o;
+        let rd = ray.d;
+
+        let mut i = floor(ro);
+        let mut dist = 0.0;
+
+        let mut normal = Vec3f::zero();
+        let srd = signum(rd);
+
+        let rdi = 1.0 / (2.0 * rd);
+        let mut hit = false;
+
+        let mut key: Vec3<i32> = Vec3i::zero();
+
+        for _ii in 0..20 {
+            key = Vec3i::from(i);
+
+            if let Some(tile) = self.tiles.get(&(key.x, key.y, key.z)) {
+
+                let mut lro = ray.at(dist);
+                lro -= Vec3f::from(key);
+                lro *= tile.size as f32;
+                lro = lro - rd * 1.0;
+
+                if let Some(hit) = tile.dda(&Ray::new(lro, rd)) {
+                    return Some(hit);
+                }
+            }
+
+            let plain = (1.0 + srd - 2.0 * (ro - i)) * rdi;
+            dist = min(plain.x, min(plain.y, plain.z));
+            normal = equal(dist, plain) * srd;
+            i += normal;
+        }
+
+        if hit {
+            let mut hit_record = HitRecord::new();
+
+            hit_record.hitpoint = ray.at(dist);
+            hit_record.key = key;
+            hit_record.distance = dist;
+            hit_record.normal = normal;
+
+            Some(hit_record)
+        } else {
+            None
+        }
     }
 
 }

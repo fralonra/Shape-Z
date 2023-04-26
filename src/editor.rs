@@ -34,7 +34,7 @@ impl TheTrait for Editor {
 
         // Make sure world has the correct size
         let world_width = ctx.width - self.ui.tile_editor_width;
-        let world_height = ctx.height;
+        let world_height = ctx.height - self.ui.browser_height;
 
         if self.buffer.width != world_width|| self.buffer.height != world_height {
             self.buffer = ColorBuffer::new(world_width, world_height);
@@ -43,7 +43,7 @@ impl TheTrait for Editor {
 
         // Render world
         if self.world.needs_update {
-            self.world.render(&mut self.buffer);
+            self.world.render(&mut self.buffer, &self.context);
             self.world.needs_update = false;
         }
         self.buffer.convert_to_u8_at(pixels, (0, 0, ctx.width, ctx.height));

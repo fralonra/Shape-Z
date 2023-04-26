@@ -20,7 +20,25 @@ impl Tile {
         camera.origin = camera.center;
         camera.origin.z += 20.0;
 
-        let data = vec![Some(0); size * size * size];
+        let mut data = vec![None; size * size * size];
+
+        // // Left wall
+        for z in 0..size {
+            for y in 0..size {
+                let index = 0 + y * size + z * size * size;
+
+                data[index] = Some(0);
+            }
+        }
+
+        // Bottom floor
+        for x in 0..size {
+            for z in 0..size {
+                let index = x + z * size * size;
+
+                data[index] = Some(0);
+            }
+        }
 
         Self {
             camera          : camera,
@@ -170,14 +188,14 @@ impl Tile {
         let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
         if let Some(hit) = self.dda(&ray) {
-            //println!("{:?}", hit.key);
+            println!("{:?}", hit.key);
             Some(hit.key)
         } else {
             None
         }
     }
 
-    fn dda(&self, ray: &Ray) -> Option<HitRecord> {
+    pub fn dda(&self, ray: &Ray) -> Option<HitRecord> {
 
         // Based on https://www.shadertoy.com/view/ct33Rn
 
@@ -193,6 +211,7 @@ impl Tile {
         let rd = ray.d;
 
         let mut i = floor(ro);
+
         let mut dist = 0.0;
 
         let mut normal = Vec3f::zero();
@@ -204,7 +223,9 @@ impl Tile {
         let mut key = Vec3i::zero();
         let mut value : u8 = 0;
 
-        for _ii in 0..40 {
+        // let bounds_distance = (self.size as f32 - ro) * rdi;
+
+        for _ii in 0..(self.size * self.size) {
 
             key = Vec3i::from(i);
             if let Some(voxel) = self.get_voxel(key.x as usize, key.y as usize, key.z as usize) {
@@ -215,6 +236,11 @@ impl Tile {
 
             let plain = (1.0 + srd - 2.0 * (ro - i)) * rdi;
             dist = min(plain.x, min(plain.y, plain.z));
+
+            // if dist > bounds_distance.x && dist > bounds_distance.y && dist > bounds_distance.z {
+            //     break;
+            // }
+
             normal = equal(dist, plain) * srd;
             i += normal;
         }

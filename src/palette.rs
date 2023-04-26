@@ -2,12 +2,14 @@
 pub struct Palette {
 
     pub colors                      : Vec<[u8; 4]>,
+    pub colors_f                    : Vec<[f32; 4]>,
 }
 
 impl Palette {
     pub fn new() -> Self {
         Self {
             colors                  : vec![],
+            colors_f                : vec![],
         }
     }
 
@@ -60,9 +62,22 @@ impl Palette {
             let b = u8::from_str_radix(&b_string, 16);
 
             if r.is_ok() && g.is_ok() && b.is_ok() {
-                self.colors.push([r.ok().unwrap(), g.ok().unwrap(), b.ok().unwrap(), 0xFF]);
+                let r = r.ok().unwrap();
+                let g = g.ok().unwrap();
+                let b = b.ok().unwrap();
+                self.colors.push([r, g, b, 0xFF]);
+                self.colors_f.push([r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0]);
             }
         }
+    }
 
+    /// Get the u8 based color at the given index
+    pub fn at(&self, index: u8) -> [u8; 4] {
+        self.colors[index as usize]
+    }
+
+    /// Get the f32 based color at the given index
+    pub fn at_f(&self, index: u8) -> [f32; 4] {
+        self.colors_f[index as usize]
     }
 }
