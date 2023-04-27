@@ -4,9 +4,8 @@ use fontdue::Font;
 #[derive(PartialEq, Clone, Debug)]
 pub enum Mode {
     Select,
-    InsertShape,
-    DeleteShape,
-    ApplyMaterials,
+    Camera,
+    Edit,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -23,8 +22,10 @@ pub struct Context {
 
     pub color_button            : [u8;4],
     pub color_widget            : [u8;4],
+    pub color_toolbar           : [u8;4],
     pub color_selected          : [u8;4],
     pub color_text              : [u8;4],
+    pub color_orange            : [u8;4],
 
     pub curr_tile               : Tile,
     pub curr_key                : Option<Vec3i>,
@@ -33,8 +34,12 @@ pub struct Context {
 
     pub palette                 : Palette,
 
+    pub curr_mode               : Mode,
+
+    pub font                    : Option<Font>,
+    pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
+
     /*
-    pub curr_mode           : Mode,
     pub curr_perspective    : Perspective,
     pub curr_shape          : usize,
     pub curr_pattern        : usize,
@@ -141,14 +146,22 @@ impl Context {
             color_button        : [53, 53, 53, 255],
             color_selected      : [135, 135, 135, 255],
             color_widget        : [24, 24, 24, 255],
+            color_toolbar       : [29, 29, 29, 255],
             color_text          : [244, 244, 244, 255],
+            color_orange        : [188, 68, 34, 255],
 
             curr_tile           : Tile::new(9),
             curr_key            : None,
 
             cmd                 : None,
 
-            palette
+            palette,
+
+            curr_mode           : Mode::Select,
+
+            font,
+            icons,
+
 
             // curr_mode       : Mode::InsertShape,
             // curr_shape      : 0,

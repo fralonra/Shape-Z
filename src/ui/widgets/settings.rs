@@ -1,7 +1,7 @@
 
 use crate::prelude::*;
 
-pub struct TileEditor {
+pub struct Settings {
     rect                        : Rect,
 
     voxels_r                    : Rect,
@@ -15,7 +15,7 @@ pub struct TileEditor {
     pub tile_needs_update       : bool,
 }
 
-impl Widget for TileEditor {
+impl Widget for Settings {
 
     fn new() -> Self {
         let mut widgets : Vec<Box<dyn Widget>> = vec![];
@@ -82,7 +82,9 @@ impl Widget for TileEditor {
 
         let r = self.rect.to_usize();
         ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
+        ctx.draw.rect(pixels, &(r.0, r.1, r.2, 2), ctx.width, &[0, 0, 0, 255]);
 
+        /*
         if context.curr_key.is_none() { return; }
 
         let tile_size = r.2 - 20;
@@ -97,7 +99,7 @@ impl Widget for TileEditor {
             self.tile_needs_update = false;
         }
         self.buffer.convert_to_u8_at(pixels, (r.0 + 10, r.1 + 10, ctx.width, ctx.height));
-        self.voxels_r = Rect::new(r.0 + 10, r.1 + 10, tile_size, tile_size);
+        self.voxels_r = Rect::new(r.0 + 10, r.1 + 10, tile_size, tile_size);*/
         /*
         // Property
 
@@ -189,6 +191,7 @@ impl Widget for TileEditor {
 
         if self.rect.is_inside((x as usize, y as usize)) {
 
+            /*
             if self.voxels_r.is_inside((x as usize, y as usize)) {
                 let x = x - self.voxels_r.x as f32;
                 let y = y - self.voxels_r.y as f32;
@@ -198,7 +201,7 @@ impl Widget for TileEditor {
             }
 
             self.cam_orbit_drag = Some((x, y, context.curr_tile.camera.azimuth, context.curr_tile.camera.elevation));
-
+            */
             /*
             // Property
             if self.prop_r.is_inside((x as u32, y as u32)) {
@@ -255,13 +258,19 @@ impl Widget for TileEditor {
 
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if let Some(cam_drag) = self.cam_orbit_drag {
+            /*
+            if let Some(mut cam_drag) = self.cam_orbit_drag {
 
-                context.curr_tile.camera.azimuth = cam_drag.2 + (cam_drag.0 - x);
-                context.curr_tile.camera.elevation = cam_drag.1 + (cam_drag.1 - y);
+                context.curr_tile.camera.azimuth += cam_drag.0 - x;
+                context.curr_tile.camera.elevation += cam_drag.1 - y;
+
+                cam_drag.0 = x;
+                cam_drag.1 = y;
+
+                self.cam_orbit_drag = Some(cam_drag);
 
                 self.tile_needs_update = true;
-            }
+            }*/
 
             /*
             if self.prop_r.is_inside((x as u32, y as u32)) {
@@ -296,7 +305,7 @@ impl Widget for TileEditor {
 
     fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        self.cam_orbit_drag = None;
+        //self.cam_orbit_drag = None;
 
         let mut consumed = false;
         for w in &mut self.widgets {

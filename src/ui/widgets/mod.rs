@@ -1,8 +1,9 @@
 use crate::prelude::*;
 
 pub mod text_button;
-pub mod tile_editor;
+pub mod settings;
 pub mod browser;
+pub mod modebar;
 
 #[allow(unused)]
 pub trait Widget : Sync + Send {

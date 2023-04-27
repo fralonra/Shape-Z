@@ -8,14 +8,16 @@ pub mod prelude {
     pub use crate::ui::context::*;
 
     pub use crate::ui::widgets::text_button::*;
-    pub use crate::ui::widgets::tile_editor::*;
+    pub use crate::ui::widgets::settings::*;
     pub use crate::ui::widgets::browser::*;
+    pub use crate::ui::widgets::modebar::*;
 }
 
 #[repr(usize)]
 enum WidgetIndices {
-    TileEditorIndex,
+    SettingsIndex,
     BrowserIndex,
+    ModeBarIndex,
 }
 
 use WidgetIndices::*;
@@ -26,10 +28,11 @@ pub struct UI {
 
     widgets                         : Vec<Box<dyn Widget>>,
 
-    pub tile_editor_width           : usize,
-    tile_editor_drag_rect           : Rect,
-    pub tile_editor_drag_start      : Option<(usize, usize)>,
+    toolbar_rect                    : Rect,
 
+    pub toolbar_height              : usize,
+    pub modebar_width               : usize,
+    pub settings_width              : usize,
     pub browser_height              : usize,
 }
 
@@ -39,12 +42,15 @@ impl UI {
 
         let mut widgets : Vec<Box<dyn Widget>> = vec![];
 
-        let tile_editor = Box::new(TileEditor::new());
-        widgets.push(tile_editor);
+        let settings = Box::new(Settings::new());
+        widgets.push(settings);
 
-        // let modebar = Box::new(ModeBar::new());
         let browser = Box::new(Browser::new());
         widgets.push(browser);
+
+        let modebar: Box<_> = Box::new(ModeBar::new());
+        widgets.push(modebar);
+
         // let perspective = Box::new(PerspectiveBar::new());
         // let property = Box::new(PropertyWidget::new());
 
@@ -55,35 +61,38 @@ impl UI {
         Self {
             widgets,
 
-            tile_editor_width       : 300,
-            tile_editor_drag_rect   : Rect::empty(),
-            tile_editor_drag_start  : None,
+            toolbar_rect            : Rect::empty(),
 
+            toolbar_height          : 90,
+            modebar_width           : 40,
+            settings_width          : 300,
             browser_height          : 150,
-
         }
     }
 
     pub fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
 
-        // Tile editor rects
+        // Toolbar
 
-        let mut tile_editor_rect = Rect::new((context.width - self.tile_editor_width), 0, self.tile_editor_width, context.height);
+        self.toolbar_rect = Rect::new(0, 0, ctx.width, self.toolbar_height);
+        ctx.draw.rect(pixels, &self.toolbar_rect.to_usize(), ctx.width, &context.color_toolbar);
+        ctx.draw.rect(pixels, &(0, 45, ctx.width, 1), ctx.width, &[21, 21, 21, 255]);
 
-        self.widgets[TileEditorIndex as usize].set_rect(tile_editor_rect.clone());
-        tile_editor_rect.x -= 20;
-        tile_editor_rect.width = 15;
-        tile_editor_rect.height = 100;
-        tile_editor_rect.y = (context.height - 50) / 2;
-        self.tile_editor_drag_rect = tile_editor_rect;
+        // Settings rect
 
-        let drag_color = if self.tile_editor_drag_start.is_some() { [255, 255, 255, 255] } else { [0, 0, 0, 255] };
+        let settings_rect = Rect::new(context.width - self.settings_width, self.toolbar_height, self.settings_width, context.height - self.toolbar_height);
 
-        ctx.draw.rounded_rect(pixels, &self.tile_editor_drag_rect.to_usize(), ctx.width, &drag_color, &(8.0, 8.0, 8.0, 8.0));
+        self.widgets[SettingsIndex as usize].set_rect(settings_rect.clone());
+
+        // --- ModeBar
+
+        let modebar_rect: Rect = Rect::new(0, self.toolbar_height, self.modebar_width, ctx.height - self.toolbar_height - self.browser_height);
+
+        self.widgets[ModeBarIndex as usize].set_rect(modebar_rect.clone());
 
         // --- Browser
 
-        let browser_rect = Rect::new(0, (context.height - self.browser_height), context.width - self.tile_editor_width, self.browser_height);
+        let browser_rect: Rect = Rect::new(0, (context.height - self.browser_height), context.width - self.settings_width, self.browser_height);
 
         self.widgets[BrowserIndex as usize].set_rect(browser_rect.clone());
 
@@ -105,12 +114,6 @@ impl UI {
 
     pub fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        if self.tile_editor_drag_rect.is_inside((x as usize, y as usize)) {
-            let offset = x as usize - (context.width - self.tile_editor_width as usize);
-            self.tile_editor_drag_start = Some((offset, self.tile_editor_width as usize));
-            return true;
-        }
-
         for w in &mut self.widgets {
             if w.touch_down(x, y, context) {
                 return true;
@@ -122,25 +125,6 @@ impl UI {
 
     pub fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        if let Some(tile_editor_drag) = &self.tile_editor_drag_start {
-
-            if context.width > x as usize {
-                let mut new_width = (context.width - x as usize) +  tile_editor_drag.0;
-
-                if new_width < 300 { new_width = 300; }
-                else
-                if new_width > context.height - 20 {
-                    new_width = context.height - 20;
-                } else
-                if new_width > context.width - 200 {
-                    new_width = context.width - 200;
-                }
-
-                self.tile_editor_width = new_width + tile_editor_drag.0;
-                return true;
-            }
-        }
-
         for w in &mut self.widgets {
             if w.touch_dragged(x, y, context) {
                 return true;
@@ -151,13 +135,7 @@ impl UI {
     }
 
     pub fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
-
         let mut consumed = false;
-
-        if self.tile_editor_drag_start.is_some() {
-            self.tile_editor_drag_start = None;
-            consumed = true;
-        }
 
         for w in &mut self.widgets {
             if w.touch_up(x, y, context) {

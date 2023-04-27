@@ -27,7 +27,7 @@ impl Tile {
             for y in 0..size {
                 let index = 0 + y * size + z * size * size;
 
-                data[index] = Some(0);
+                data[index] = Some(64);
             }
         }
 
@@ -36,7 +36,7 @@ impl Tile {
             for z in 0..size {
                 let index = x + z * size * size;
 
-                data[index] = Some(0);
+                data[index] = Some(64);
             }
         }
 

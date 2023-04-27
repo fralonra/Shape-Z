@@ -1,6 +1,11 @@
 use theframework::*;
 use crate::prelude::*;
 
+#[derive(PartialEq, Debug, Clone)]
+enum EditorMode {
+    CameraPan,
+}
+
 pub struct Editor {
 
     ui                  : UI,
@@ -8,6 +13,8 @@ pub struct Editor {
 
     world               : World,
     buffer              : ColorBuffer,
+
+    click_drag          : Option<(f32, f32)>,
 
     ui_drag             : bool,
 }
@@ -22,6 +29,8 @@ impl TheTrait for Editor {
             world       : World::new(),
             buffer      : ColorBuffer::new(10, 10),
 
+            click_drag  : None,
+
             ui_drag     : false,
         }
     }
@@ -33,8 +42,8 @@ impl TheTrait for Editor {
         self.context.height = ctx.height;
 
         // Make sure world has the correct size
-        let world_width = ctx.width - self.ui.tile_editor_width;
-        let world_height = ctx.height - self.ui.browser_height;
+        let world_width = ctx.width - self.ui.settings_width -  self.ui.modebar_width;
+        let world_height = ctx.height - self.ui.browser_height - self.ui.toolbar_height;
 
         if self.buffer.width != world_width|| self.buffer.height != world_height {
             self.buffer = ColorBuffer::new(world_width, world_height);
@@ -46,7 +55,7 @@ impl TheTrait for Editor {
             self.world.render(&mut self.buffer, &self.context);
             self.world.needs_update = false;
         }
-        self.buffer.convert_to_u8_at(pixels, (0, 0, ctx.width, ctx.height));
+        self.buffer.convert_to_u8_at(pixels, (self.ui.modebar_width, self.ui.toolbar_height, ctx.width, ctx.height));
 
         // Draw UI
         self.ui.draw(pixels, &mut self.context, &self.world, ctx);
@@ -61,6 +70,9 @@ impl TheTrait for Editor {
             self.ui_drag = true;
             return true;
         } else {
+
+            self.click_drag = Some((x, y));
+
             if let Some(key) = self.world.key_at(vec2f(x, y), &self.buffer) {
                 if Some(key) != self.context.curr_key {
                     if let Some(tile) = self.world.get_tile(key) {
@@ -90,6 +102,23 @@ impl TheTrait for Editor {
             self.ui_drag = true;
             true
         } else {
+
+            if let Some(mut click_drag) = self.click_drag {
+
+                let xx = (click_drag.0 - x) / 100.0;
+                let yy = (y - click_drag.1) / 100.0;
+
+                click_drag.0 = x;
+                click_drag.1 = y;
+                self.click_drag = Some(click_drag);
+
+                //self.world.camera.set_top_down_angle(10.0, 10.0, vec3f(0.0, 0.0, 5.0));
+
+                self.world.camera.move_by(xx, yy);
+                self.world.needs_update = true;
+                return true;
+            }
+
             false
         }
     }

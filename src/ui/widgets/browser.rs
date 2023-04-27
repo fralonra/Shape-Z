@@ -27,6 +27,7 @@ impl Widget for Browser {
 
         let mut r = self.rect.to_usize();
         ctx.draw.blend_rect(pixels, &r, context.width, &context.color_widget);
+        ctx.draw.rect(pixels, &(r.0 + r.2, r.1, 1, r.3), ctx.width, &[0, 0, 0, 255]);
 
         r.0 += 40;
         r.1 += 10;
