@@ -11,6 +11,8 @@ pub mod camera;
 pub mod buffer;
 pub mod tile;
 pub mod palette;
+pub mod tool;
+pub mod script;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -33,7 +35,7 @@ pub mod prelude {
     pub use crate::ui::prelude::*;
     pub use crate::ui::UI;
 
-    pub use crate::editor::Editor;
+    pub use crate::editor::{Editor, WORLD};
     pub use crate::pattern::prelude::*;
     pub use crate::sdf3d::prelude::*;
     pub use crate::property::*;
@@ -43,6 +45,8 @@ pub mod prelude {
     pub use crate::buffer::ColorBuffer;
     pub use crate::tile::Tile;
     pub use crate::palette::Palette;
+    pub use crate::tool::Tool;
+    pub use crate::script::*;
 }
 
 use prelude::*;

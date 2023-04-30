@@ -30,6 +30,8 @@ pub struct Context {
     pub curr_tile               : Tile,
     pub curr_key                : Option<Vec3i>,
 
+    pub curr_tool               : Tool,
+
     pub cmd                     : Option<Command>,
 
     pub palette                 : Palette,
@@ -38,6 +40,11 @@ pub struct Context {
 
     pub font                    : Option<Font>,
     pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
+
+    // Tools
+
+    pub engine                  : rhai::Engine,
+    pub editing_tools           : Vec<Tool>,
 
     /*
     pub curr_perspective    : Perspective,
@@ -62,6 +69,10 @@ impl Context {
     pub fn new() -> Self {
 
         let mut palette = Palette::new();
+
+        let mut curr_tool = Tool::new("".into());
+
+        let mut engine = setup_engine();
 
         // Load Font
 
@@ -90,6 +101,21 @@ impl Context {
                         let mut cut_name = name.replace("icons/", "");
                         cut_name = cut_name.replace(".png", "");
                         icons.insert(cut_name.to_string(), (bytes.to_vec(), info.width, info.height));
+                    }
+                }
+            } else
+            if name.starts_with("tools/") {
+                if let Some(bytes) = Embedded::get(name) {
+                    if let Some(string) = std::str::from_utf8(bytes.data.as_ref()).ok() {
+                        //println!("{}", string);
+
+                        let mut tool = Tool::new(string.into());
+
+                        tool.init(&mut engine);
+                        let name = tool.name();
+                        println!("{}", name);
+
+                        curr_tool = tool.clone();
                     }
                 }
             } else {
@@ -153,6 +179,8 @@ impl Context {
             curr_tile           : Tile::new(9),
             curr_key            : None,
 
+            curr_tool,
+
             cmd                 : None,
 
             palette,
@@ -162,6 +190,8 @@ impl Context {
             font,
             icons,
 
+            engine,
+            editing_tools       : vec![],
 
             // curr_mode       : Mode::InsertShape,
             // curr_shape      : 0,

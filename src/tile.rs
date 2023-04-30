@@ -188,8 +188,8 @@ impl Tile {
         let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
         if let Some(hit) = self.dda(&ray) {
-            println!("{:?}", hit.key);
-            Some(hit.key)
+            println!("{:?}", hit.tile_key);
+            Some(hit.tile_key)
         } else {
             None
         }
@@ -252,7 +252,7 @@ impl Tile {
             hit_record.hitpoint = ray.at(dist);
             hit_record.normal = normal;
             hit_record.value = value;
-            hit_record.key = key;
+            hit_record.tile_key = key;
 
             Some(hit_record)
         } else {

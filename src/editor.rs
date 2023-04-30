@@ -1,6 +1,14 @@
 use theframework::*;
 use crate::prelude::*;
 
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref WORLD : Mutex<World> = Mutex::new(World::new());
+    // pub static ref WORLD : Mutex<World> = Mutex::new(World::new());
+}
+
 #[derive(PartialEq, Debug, Clone)]
 enum EditorMode {
     CameraPan,
@@ -11,7 +19,6 @@ pub struct Editor {
     ui                  : UI,
     context             : Context,
 
-    world               : World,
     buffer              : ColorBuffer,
 
     click_drag          : Option<(f32, f32)>,
@@ -26,7 +33,6 @@ impl TheTrait for Editor {
             ui          : UI::new(),
             context     : Context::new(),
 
-            world       : World::new(),
             buffer      : ColorBuffer::new(10, 10),
 
             click_drag  : None,
@@ -47,18 +53,18 @@ impl TheTrait for Editor {
 
         if self.buffer.width != world_width|| self.buffer.height != world_height {
             self.buffer = ColorBuffer::new(world_width, world_height);
-            self.world.needs_update = true;
+            WORLD.lock().unwrap().needs_update = true;
         }
 
         // Render world
-        if self.world.needs_update {
-            self.world.render(&mut self.buffer, &self.context);
-            self.world.needs_update = false;
+        if WORLD.lock().unwrap().needs_update {
+            WORLD.lock().unwrap().render(&mut self.buffer, &self.context);
+            WORLD.lock().unwrap().needs_update = false;
         }
         self.buffer.convert_to_u8_at(pixels, (self.ui.modebar_width, self.ui.toolbar_height, ctx.width, ctx.height));
 
         // Draw UI
-        self.ui.draw(pixels, &mut self.context, &self.world, ctx);
+        self.ui.draw(pixels, &mut self.context, &WORLD.lock().unwrap(), ctx);
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
@@ -73,21 +79,38 @@ impl TheTrait for Editor {
 
             self.click_drag = Some((x, y));
 
-            if let Some(key) = self.world.key_at(vec2f(x, y), &self.buffer) {
-                if Some(key) != self.context.curr_key {
-                    if let Some(tile) = self.world.get_tile(key) {
-                        self.context.curr_tile = tile;
-                        self.context.curr_key = Some(key);
-                        self.ui.update(&mut self.context);
-                        return true;
+            match self.context.curr_mode {
+
+                Mode::Select => {
+                    if let Some(world) = WORLD.lock().ok() {
+                        if let Some(key) = world.key_at(self.to_world(vec2f(x, y)), &self.buffer) {
+                            println!("{:?}", key);
+                            if Some(key) != self.context.curr_key {
+                                if let Some(tile) = world.get_tile(key) {
+                                    self.context.curr_tile = tile;
+                                    self.context.curr_key = Some(key);
+                                    self.ui.update(&mut self.context);
+                                    return true;
+                                }
+                            }
+                        } else {
+                            println!("None");
+                            if self.context.curr_key.is_some() {
+                                self.context.curr_key = None;
+                                self.ui.update(&mut self.context);
+                                return true;
+                            }
+                        }
                     }
-                }
-            } else {
-                if self.context.curr_key.is_some() {
-                    self.context.curr_key = None;
-                    return true;
-                }
+                },
+                Mode::Edit => {
+                    if let Some(key) = self.context.curr_key {
+                        self.context.curr_tool.apply(&self.context.engine, key);
+                    }
+                },
+                _ => {}
             }
+
         }
 
         false
@@ -114,8 +137,8 @@ impl TheTrait for Editor {
 
                 //self.world.camera.set_top_down_angle(10.0, 10.0, vec3f(0.0, 0.0, 5.0));
 
-                self.world.camera.move_by(xx, yy);
-                self.world.needs_update = true;
+                WORLD.lock().unwrap().camera.move_by(xx, yy);
+                WORLD.lock().unwrap().needs_update = true;
                 return true;
             }
 
@@ -137,11 +160,12 @@ impl TheTrait for Editor {
 
 }
 
-pub trait AddEditor {
+pub trait MyEditor {
     fn process_cmds(&mut self);
+    fn to_world(&self, pos: Vec2f) -> Vec2f;
 }
 
-impl AddEditor for Editor {
+impl MyEditor for Editor {
     /// Process possible UI commands
     fn process_cmds(&mut self) {
         if let Some(cmd) = &self.context.cmd {
@@ -149,5 +173,12 @@ impl AddEditor for Editor {
                 _ => {}
             }
         }
+    }
+
+    /// Convert a screen space coordinate to a world coordinate
+    fn to_world(&self, mut pos: Vec2f) -> Vec2f {
+        pos.x -= self.ui.modebar_width as f32;
+        pos.y -= self.ui.toolbar_height as f32;
+        pos
     }
 }

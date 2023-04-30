@@ -80,12 +80,11 @@ impl World {
 
         let screen = vec2f(buffer.width as f32, buffer.height as f32);
 
-        let uv = vec2f(x as f32, 1.0 - y);
+        let uv = vec2f(x, 1.0 - y);
 
         let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
-        if let Some(hit) = self.dda(&ray) {
-            println!("{:?}", hit.key);
+        if let Some(hit) = self.dda_recursive(&ray) {
             Some(hit.key)
         } else {
             None
@@ -187,11 +186,10 @@ impl World {
         let srd = signum(rd);
 
         let rdi = 1.0 / (2.0 * rd);
-        let mut hit = false;
 
         let mut key: Vec3<i32> = Vec3i::zero();
 
-        for _ii in 0..20 {
+        for _ii in 0..40 {
             key = Vec3i::from(i);
 
             if let Some(tile) = self.tiles.get(&(key.x, key.y, key.z)) {
@@ -201,7 +199,8 @@ impl World {
                 lro *= tile.size as f32;
                 lro = lro - rd * 1.0;
 
-                if let Some(hit) = tile.dda(&Ray::new(lro, rd)) {
+                if let Some(mut hit) = tile.dda(&Ray::new(lro, rd)) {
+                    hit.key = key;
                     return Some(hit);
                 }
             }
@@ -212,6 +211,8 @@ impl World {
             i += normal;
         }
 
+        None
+        /*
         if hit {
             let mut hit_record = HitRecord::new();
 
@@ -223,7 +224,7 @@ impl World {
             Some(hit_record)
         } else {
             None
-        }
+        }*/
     }
 
 }
