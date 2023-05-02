@@ -73,7 +73,7 @@ impl World {
         });
     }
 
-    pub fn key_at(&self, pos: Vec2f, buffer: &ColorBuffer) -> Option<Vec3i> {
+    pub fn hit_at(&self, pos: Vec2f, buffer: &ColorBuffer) -> Option<HitRecord> {
 
         let x: f32 = pos.x / buffer.width as f32;
         let y: f32 = pos.y / buffer.height as f32;
@@ -85,7 +85,7 @@ impl World {
         let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
 
         if let Some(hit) = self.dda_recursive(&ray) {
-            Some(hit.key)
+            Some(hit)
         } else {
             None
         }

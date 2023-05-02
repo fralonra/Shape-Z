@@ -4,6 +4,8 @@ use crate::prelude::*;
 pub struct Browser {
     rect                : Rect,
 
+    header_height       : usize,
+    item_size           : (usize, usize),
     content_rects       : Vec<Rect>,
     ids                 : Vec<Uuid>,
 }
@@ -14,6 +16,9 @@ impl Widget for Browser {
 
         Self {
             rect            : Rect::empty(),
+
+            header_height   : 30,
+            item_size       : (120, 25),
             content_rects   : vec![],
             ids             : vec![],
         }
@@ -26,61 +31,47 @@ impl Widget for Browser {
     fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
 
         let mut r = self.rect.to_usize();
-        ctx.draw.blend_rect(pixels, &r, context.width, &context.color_widget);
-        ctx.draw.rect(pixels, &(r.0 + r.2, r.1, 1, r.3), ctx.width, &[0, 0, 0, 255]);
+        ctx.draw.rect(pixels, &r, context.width, &context.color_widget);
+        ctx.draw.rect(pixels, &(r.0 + r.2, r.1, 1, r.3), ctx.width, &context.color_black);
 
-        r.0 += 40;
-        r.1 += 10;
-        r.2 = 100;
-        r.3 = 100;
+        r.3 = self.header_height;
+
+        ctx.draw.rect(pixels, &r, ctx.width, &context.color_toolbar);
+        ctx.draw.rect(pixels, &(r.0, r.1 + r.3, r.2, 1), ctx.width, &context.color_black);
 
         self.content_rects = vec![];
         self.ids = vec![];
 
-        /*
-        if context.is_color_property() {
-            for (index, pattern) in context.patterns.iter().enumerate() {
+        r.1 += r.3;
+        r.2 = self.item_size.0;
+        r.3 = self.item_size.1;
 
-                self.content_rects.push(Rect::new(r.0 as u32, r.1 as u32, 100, 100));
+        let curr_name = context.curr_tool.name();
 
-                let color = if index == context.curr_pattern { context.color_selected } else { context.color_widget };
+        self.content_rects = vec![];
+        for tool_name in &context.curr_tools {
 
-                context.draw2d.draw_rounded_rect(pixels, &r, context.width, &color, &(5.0, 5.0, 5.0, 5.0));
+            let color = &context.color_green;
+            let mut border_color = &context.color_green;
+            let ro = 0.0;
 
-                let mut pattern_pixels = vec![0; 100 * 100 * 4];
-
-                self.render.render_pattern_preview(100, &mut pattern_pixels, pattern);
-                context.draw2d.blend_slice(pixels, &mut pattern_pixels[..], &r, context.width);
-
-                r.0 += 120;
+            if curr_name == *tool_name {
+                border_color = &context.color_white;
             }
-        } else
-        if context.curr_property == Props::Shape {
 
-            let mut preview = vec![0; 100 * 100 * 4];
+            ctx.draw.rounded_rect_with_border(pixels, &r, ctx.width, &color, &(ro,ro, ro, ro), border_color, 1.5);
 
-            if let Some(pos) = context.selected_pos {
+            ctx.draw.text_rect(pixels, &r, ctx.width, &context.font.as_ref().unwrap(), 17.0, tool_name, &context.color_text, &color, theframework::thedraw2d::TheTextAlignment::Center);
 
-                if let Some(tile) = render.tiles.get(&pos) {
-                    for (index, shape) in tile.shapes.iter().enumerate() {
+            self.content_rects.push(Rect::from(r));
 
-                        self.content_rects.push(Rect::new(r.0 as u32, r.1 as u32, 100, 100));
-
-                        let color = if Some(shape.id()) == context.selected_id { context.color_selected } else { context.color_widget };
-
-                        context.draw2d.draw_rounded_rect(pixels, &r, context.width, &color, &(5.0, 5.0, 5.0, 5.0));
-
-                        tile.render_shape_preview(&context.palette, index, 100, &mut preview);
-
-                        context.draw2d.blend_slice(pixels, &preview, &r, context.width);
-
-                        self.ids.push(shape.id());
-
-                        r.0 += 120;
-                    }
-                }
+            if r.1 + r.3 > ctx.height {
+                r.0 += r.2;
+                r.1 = self.rect.y + self.header_height;
+            } else {
+                r.1 += r.3;
             }
-        }*/
+        }
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
@@ -94,6 +85,15 @@ impl Widget for Browser {
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
         if self.contains(x, y) {
+
+            for (index, r) in self.content_rects.iter().enumerate() {
+                if r.is_inside((x as usize, y as usize)) {
+                    if let Some(tool) = context.tools.get(&context.curr_tools[index]) {
+                        context.curr_tool = tool.clone();
+                        return true;
+                    }
+                }
+            }
 
             /*
             if context.is_color_property(){
@@ -115,7 +115,7 @@ impl Widget for Browser {
                 }
             }*/
 
-            true
+            false
         } else {
             false
         }

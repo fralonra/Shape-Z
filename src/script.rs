@@ -207,6 +207,7 @@ impl ScriptVec3f {
 
     /// Register to the engine
     pub fn register(engine: &mut Engine) {
+
         engine.register_type_with_name::<ScriptVec3f>("vec3f")
             .register_fn("vec3f", ScriptVec3f::zeros)
             .register_fn("vec3f", ScriptVec3f::new)
@@ -264,11 +265,86 @@ impl ScriptVec3f {
                 }
             }
         });*/
+
+        // Tile
+
+        Tile::register(engine);
+
+        engine.register_fn("get_tile", |loc: ScriptVec3i| -> Tile {
+            if let Some(tile) = WORLD.lock().unwrap().get_tile(loc.v) {
+                tile.clone()
+            } else {
+                Tile::new(9)
+            }
+        });
+
+        engine.register_fn("set_tile", |loc: ScriptVec3i, tile: Tile| {
+            WORLD.lock().unwrap().set_tile(loc.v, tile);
+            WORLD.lock().unwrap().needs_update = true;
+        });
+
+        // Hit Record
+        HitRecord::register(engine);
+
+        // Side Enum
+        engine.register_type_with_name::<SideEnum>("Side")
+            .register_static_module("Side", exported_module!(side_module).into());
+
     }
 }
 
 impl FuncArgs for ScriptVec3f {
     fn parse<C: Extend<rhai::Dynamic>>(self, container: &mut C) {
         container.extend(once(rhai::Dynamic::from(self)));
+    }
+}
+
+// Side Enum
+
+use rhai::plugin::*;
+use rhai::Dynamic;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum SideEnum {
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Front,
+    Back
+}
+
+// Create a plugin module with functions constructing the 'Side' variants
+#[export_module]
+mod side_module
+{
+    // Constructors
+    #[allow(non_upper_case_globals)]
+    pub const Top: SideEnum = SideEnum::Top;
+    #[allow(non_upper_case_globals)]
+    pub const Bottom: SideEnum = SideEnum::Bottom;
+    #[allow(non_upper_case_globals)]
+    pub const Left: SideEnum = SideEnum::Left;
+    #[allow(non_upper_case_globals)]
+    pub const Right: SideEnum = SideEnum::Right;
+    #[allow(non_upper_case_globals)]
+    pub const Front: SideEnum = SideEnum::Front;
+    #[allow(non_upper_case_globals)]
+    pub const Back: SideEnum = SideEnum::Back;
+
+    // Printing
+    #[rhai_fn(global, name = "to_string", name = "to_debug", pure)]
+    pub fn to_string(failure_enum: &mut SideEnum) -> String {
+        format!("{failure_enum:?}")
+    }
+
+    // '==' and '!=' operators
+    #[rhai_fn(global, name = "==", pure)]
+    pub fn eq(side_enum: &mut SideEnum, side_enum2: SideEnum) -> bool {
+        side_enum == &side_enum2
+    }
+    #[rhai_fn(global, name = "!=", pure)]
+    pub fn neq(side_enum: &mut SideEnum, side_enum2: SideEnum) -> bool {
+        side_enum != &side_enum2
     }
 }

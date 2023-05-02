@@ -26,11 +26,17 @@ pub struct Context {
     pub color_selected          : [u8;4],
     pub color_text              : [u8;4],
     pub color_orange            : [u8;4],
+    pub color_green             : [u8;4],
+    pub color_red               : [u8;4],
+    pub color_blue              : [u8;4],
+    pub color_white             : [u8;4],
+    pub color_black             : [u8;4],
 
     pub curr_tile               : Tile,
     pub curr_key                : Option<Vec3i>,
 
     pub curr_tool               : Tool,
+    pub curr_tools              : Vec<String>,
 
     pub cmd                     : Option<Command>,
 
@@ -44,7 +50,7 @@ pub struct Context {
     // Tools
 
     pub engine                  : rhai::Engine,
-    pub editing_tools           : Vec<Tool>,
+    pub tools                   : FxHashMap<String, Tool>,
 
     /*
     pub curr_perspective    : Perspective,
@@ -71,7 +77,9 @@ impl Context {
         let mut palette = Palette::new();
 
         let mut curr_tool = Tool::new("".into());
+        let mut curr_tools = vec![];
 
+        let mut tools : FxHashMap<String, Tool> = FxHashMap::default();
         let mut engine = setup_engine();
 
         // Load Font
@@ -116,6 +124,9 @@ impl Context {
                         println!("{}", name);
 
                         curr_tool = tool.clone();
+
+                        curr_tools.push(name.clone());
+                        tools.insert(name, tool);
                     }
                 }
             } else {
@@ -175,11 +186,17 @@ impl Context {
             color_toolbar       : [29, 29, 29, 255],
             color_text          : [244, 244, 244, 255],
             color_orange        : [188, 68, 34, 255],
+            color_green         : [10, 93, 80, 255],
+            color_red           : [207, 55, 54, 255],
+            color_blue          : [27, 79, 136, 255],
+            color_white         : [255, 255, 255, 255],
+            color_black         : [0, 0, 0, 255],
 
             curr_tile           : Tile::new(9),
             curr_key            : None,
 
             curr_tool,
+            curr_tools,
 
             cmd                 : None,
 
@@ -191,7 +208,7 @@ impl Context {
             icons,
 
             engine,
-            editing_tools       : vec![],
+            tools,
 
             // curr_mode       : Mode::InsertShape,
             // curr_shape      : 0,

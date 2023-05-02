@@ -79,38 +79,53 @@ impl TheTrait for Editor {
 
             self.click_drag = Some((x, y));
 
-            match self.context.curr_mode {
+            let mut consumed = false;
 
+            match self.context.curr_mode {
                 Mode::Select => {
+
                     if let Some(world) = WORLD.lock().ok() {
-                        if let Some(key) = world.key_at(self.to_world(vec2f(x, y)), &self.buffer) {
-                            println!("{:?}", key);
+                        if let Some(hit) = world.hit_at(self.to_world(vec2f(x, y)), &self.buffer) {
+                            // println!("{:?}", hit);
+                            let key = hit.key;
                             if Some(key) != self.context.curr_key {
                                 if let Some(tile) = world.get_tile(key) {
                                     self.context.curr_tile = tile;
                                     self.context.curr_key = Some(key);
                                     self.ui.update(&mut self.context);
-                                    return true;
+                                    consumed = true;
                                 }
                             }
                         } else {
-                            println!("None");
+                            // println!("None");
                             if self.context.curr_key.is_some() {
                                 self.context.curr_key = None;
                                 self.ui.update(&mut self.context);
-                                return true;
+                                consumed = true;
                             }
                         }
                     }
+
                 },
                 Mode::Edit => {
-                    if let Some(key) = self.context.curr_key {
-                        self.context.curr_tool.apply(&self.context.engine, key);
+
+                    let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer);
+
+                    if let Some(mut hit) = hit {
+                        hit.compute_side();
+                        self.context.curr_tool.hit(&self.context.engine, hit);
+                        consumed = true;
                     }
+
+                    // if let Some(key) = self.context.curr_key {
+                    //     self.context.curr_tool.apply(&self.context.engine, key);
+                    //     return true;
+                    // }
                 },
                 _ => {}
             }
 
+            return consumed;
         }
 
         false

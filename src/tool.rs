@@ -97,6 +97,28 @@ impl Tool {
         }
     }
 
+    /// Apply the tool
+    pub fn hit(&mut self, engine: &Engine, hit_record: HitRecord) {
+
+        if let Some(ast) = &self.ast {
+
+            let hit : Dynamic = Dynamic::from(hit_record);
+
+            #[allow(deprecated)]
+            let result = engine.call_fn_raw(
+                            &mut Scope::new(),
+                            &ast,
+                            false,
+                            true,
+                            "hit",
+                            Some(&mut self.this_map),
+                            [(hit),]
+                        );
+
+            println!("{:?}", result);
+        }
+    }
+
     /// Return a string from the map
     pub fn get_string(&self, key: &str) -> Option<String> {
         if let Some(map) = self.this_map.read_lock::<Map>() {

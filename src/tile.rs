@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
+use rhai::{ Engine, FuncArgs };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Tile {
@@ -259,4 +260,29 @@ impl Tile {
             None
         }
     }
+
+    /// Get the size of the tile
+    pub fn get_size(&mut self) -> i32 {
+        self.size as i32
+    }
+
+    /// Set the voxel at the given position
+    pub fn set_voxel_script(&mut self, loc: ScriptVec3i, value: i32) {
+        self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some(value as u8));
+    }
+
+    /// Clear the voxel at the given position
+    pub fn clear_voxel_script(&mut self, loc: ScriptVec3i) {
+        self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, None);
+    }
+
+
+    /// Register to the engine
+    pub fn register(engine: &mut Engine) {
+        engine.register_type_with_name::<Tile>("Tile")
+            .register_get("size", Tile::get_size)
+            .register_fn("set", Tile::set_voxel_script)
+            .register_fn("clear", Tile::clear_voxel_script);
+    }
+
 }
