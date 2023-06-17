@@ -144,42 +144,6 @@ impl Widget for Settings {
             w.draw(pixels, context, world, ctx);
         }
 
-        // Palette
-
-        let x = r.0 + 5;
-        let y = r.1 + 2;
-        let size = 18;
-        let mut pr = (x, y, size, size);
-
-        let mut in_row = 0;
-
-        for index in 0..context.palette.colors.len() {
-
-            let color = context.palette.at(index as u8);
-            ctx.draw.rect(pixels, &pr, context.width, &color);
-
-            // if index == context.curr_color_index {
-            //     if index < 2 {
-            //         context.draw2d.draw_rect_outline(pixels, &pr, context.width, [255, 255, 255, 255]);
-            //     } else {
-            //         context.draw2d.draw_rect_outline(pixels, &pr, context.width, [0, 0, 0, 255]);
-            //     }
-            // }
-
-            if in_row == 15 {
-                pr.0 = self.rect.x + 5;
-                pr.1 += size;
-                in_row = -1;
-            } else {
-                pr.0 += size;
-            }
-
-            in_row += 1;
-        }
-
-        self.palette_r = Rect::new(x, y, 10 * 20 + 20, 40);
-
-
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {

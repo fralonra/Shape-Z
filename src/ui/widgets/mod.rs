@@ -3,7 +3,7 @@ use crate::prelude::*;
 pub mod text_button;
 pub mod settings;
 pub mod browser;
-pub mod modebar;
+pub mod palettebar;
 pub mod color_widget;
 
 #[derive(Clone, Debug)]

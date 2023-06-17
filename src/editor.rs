@@ -48,7 +48,7 @@ impl TheTrait for Editor {
         self.context.height = ctx.height;
 
         // Make sure world has the correct size
-        let world_width = ctx.width - self.ui.settings_width -  self.ui.modebar_width;
+        let world_width = ctx.width - self.ui.settings_width -  self.ui.palettebar_width;
         let world_height = ctx.height - self.ui.browser_height - self.ui.toolbar_height;
 
         if self.buffer.width != world_width|| self.buffer.height != world_height {
@@ -61,7 +61,7 @@ impl TheTrait for Editor {
             WORLD.lock().unwrap().render(&mut self.buffer, &self.context);
             WORLD.lock().unwrap().needs_update = false;
         }
-        self.buffer.convert_to_u8_at(pixels, (self.ui.modebar_width, self.ui.toolbar_height, ctx.width, ctx.height));
+        self.buffer.convert_to_u8_at(pixels, (self.ui.palettebar_width, self.ui.toolbar_height, ctx.width, ctx.height));
 
         // Draw UI
         self.ui.draw(pixels, &mut self.context, &WORLD.lock().unwrap(), ctx);
@@ -74,13 +74,13 @@ impl TheTrait for Editor {
         if self.ui.touch_down(x, y, &mut self.context) {
             self.process_cmds();
             self.ui_drag = true;
-            return true;
         } else {
 
             self.click_drag = Some((x, y));
 
             let mut consumed = false;
 
+            /*
             match self.context.curr_mode {
                 Mode::Select => {
 
@@ -123,12 +123,17 @@ impl TheTrait for Editor {
                     // }
                 },
                 _ => {}
+            }*/
+
+            let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer);
+
+            if let Some(mut hit) = hit {
+                hit.compute_side();
+                self.context.curr_tool.hit(&self.context.engine, hit);
+                consumed = true;
             }
-
-            return consumed;
         }
-
-        false
+        return true;
     }
 
 
@@ -192,7 +197,7 @@ impl MyEditor for Editor {
 
     /// Convert a screen space coordinate to a world coordinate
     fn to_world(&self, mut pos: Vec2f) -> Vec2f {
-        pos.x -= self.ui.modebar_width as f32;
+        pos.x -= self.ui.palettebar_width as f32;
         pos.y -= self.ui.toolbar_height as f32;
         pos
     }

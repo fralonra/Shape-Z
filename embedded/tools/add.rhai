@@ -3,6 +3,9 @@ fn init() {
 
     this.name = "Add";
 
+    this.parameters = [
+        color("test", 10)
+    ];
 }
 
 fn apply(key) {

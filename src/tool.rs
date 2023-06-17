@@ -23,7 +23,7 @@ impl Tool {
         }
     }
 
-    pub fn init(&mut self, engine: &Engine) {
+    pub fn init(&mut self, engine: &Engine, file_name: &str) {
 
         let this_map = rhai::Map::new();
 
@@ -35,8 +35,8 @@ impl Tool {
             if let Some(ast) = result.ok() {
                 let result = engine.eval_ast::<Dynamic>(&ast);
 
-                println!("{:?}", result);
                 if result.is_err() {
+                    println!("{} : {:?}", file_name, result.err().unwrap().to_string());
 
                     /*
                     if let Some(err) = result.err() {
@@ -59,11 +59,36 @@ impl Tool {
                                     []
                                 );
 
-                    println!("{:?}", result);
+                    if result.is_err() {
+                        println!("{} : {:?}", file_name, result.err().unwrap().to_string());
+                    }
+
+                    let map = self.this_map.clone().cast::<rhai::Map>();
+
+                    let mut values : Vec<WidgetValue> = vec![];
+
+                    if let Some(v) = map.get("parameters") {
+                        if let Some(array) = v.clone().into_array().ok() {
+                            for v in array {
+                                if let Some(value) = v.read_lock::<ScriptValue>() {
+                                    match value.value_type {
+                                        ScriptValueType::Color => {
+                                            values.push(WidgetValue::Color(value.name.clone(), value.index));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    //println!("{:?}", values);
+                    self.widget_values = values;
                 }
 
                 self.ast = Some(ast);
             }
+        } else {
+            println!("{} : {:?}", file_name, result.err().unwrap().to_string());
         }
     }
 

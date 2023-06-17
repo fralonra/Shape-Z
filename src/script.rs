@@ -5,10 +5,10 @@ use std::iter::once;
 pub fn setup_engine() -> Engine {
     let mut engine = Engine::new();
 
-    // vec3
-
     ScriptVec3i::register(&mut engine);
     ScriptVec3f::register(&mut engine);
+
+    ScriptValue::register(&mut engine);
 
     engine
 }
@@ -298,6 +298,41 @@ impl FuncArgs for ScriptVec3f {
         container.extend(once(rhai::Dynamic::from(self)));
     }
 }
+
+// ScriptValue
+
+#[derive(Debug, Clone)]
+pub enum ScriptValueType {
+    Color,
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ScriptValue {
+    pub value_type      : ScriptValueType,
+
+    pub name            : String,
+
+    // Color Index
+    pub index           : u8,
+}
+
+impl ScriptValue {
+    pub fn color(name: String, index: i32) -> Self {
+        Self {
+            value_type : ScriptValueType::Color,
+
+            name,
+            index       : index as u8,
+        }
+    }
+
+    pub fn register(engine: &mut Engine) {
+        engine.register_type_with_name::<ScriptValue>("Value")
+            .register_fn("color", ScriptValue::color);
+    }
+}
+
 
 // Side Enum
 

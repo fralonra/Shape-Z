@@ -64,8 +64,8 @@ impl World {
                     let mut color = [uv.x, uv.y, 0.0, 1.0];
 
                     if let Some(hit) = self.dda_recursive(&ray) {
-                        color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
-                        // color = context.palette.at_f(hit.value);
+                        //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
+                        color = context.palette.at_f(hit.value);
                     }
 
                     pixel.copy_from_slice(&color);

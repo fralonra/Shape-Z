@@ -10,7 +10,7 @@ pub mod prelude {
     pub use crate::ui::widgets::text_button::*;
     pub use crate::ui::widgets::settings::*;
     pub use crate::ui::widgets::browser::*;
-    pub use crate::ui::widgets::modebar::*;
+    pub use crate::ui::widgets::palettebar::*;
 }
 
 #[repr(usize)]
@@ -31,7 +31,7 @@ pub struct UI {
     toolbar_rect                    : Rect,
 
     pub toolbar_height              : usize,
-    pub modebar_width               : usize,
+    pub palettebar_width            : usize,
     pub settings_width              : usize,
     pub browser_height              : usize,
 }
@@ -48,8 +48,8 @@ impl UI {
         let browser = Box::new(Browser::new());
         widgets.push(browser);
 
-        let modebar: Box<_> = Box::new(ModeBar::new());
-        widgets.push(modebar);
+        let palette: Box<PaletteBar> = Box::new(PaletteBar::new());
+        widgets.push(palette);
 
         // let perspective = Box::new(PerspectiveBar::new());
         // let property = Box::new(PropertyWidget::new());
@@ -64,8 +64,8 @@ impl UI {
             toolbar_rect            : Rect::empty(),
 
             toolbar_height          : 90,
-            modebar_width           : 40,
-            settings_width          : 300,
+            palettebar_width        : 115,
+            settings_width          : 200,
             browser_height          : 150,
         }
     }
@@ -86,15 +86,21 @@ impl UI {
 
         // --- ModeBar
 
-        let modebar_rect: Rect = Rect::new(0, self.toolbar_height, self.modebar_width, ctx.height - self.toolbar_height - self.browser_height);
+        let modebar_rect: Rect = Rect::new(0, self.toolbar_height, self.palettebar_width, ctx.height - self.toolbar_height - self.browser_height);
 
         self.widgets[ModeBarIndex as usize].set_rect(modebar_rect.clone());
 
         // --- Browser
 
-        let browser_rect: Rect = Rect::new(0, (context.height - self.browser_height), context.width - self.settings_width, self.browser_height);
+        let browser_rect: Rect = Rect::new(0, context.height - self.browser_height, context.width - self.settings_width, self.browser_height);
 
         self.widgets[BrowserIndex as usize].set_rect(browser_rect.clone());
+
+        // --- Toolbar Icon
+
+        if let Some(logo) = context.icons.get(&"logo_toolbar".to_string()) {
+            ctx.draw.blend_slice(pixels, &logo.0, &(4, 2, logo.1 as usize, logo.2 as usize), context.width);
+        }
 
         // ---
 

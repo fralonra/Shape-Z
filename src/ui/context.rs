@@ -2,13 +2,6 @@ use crate::prelude::*;
 use fontdue::Font;
 
 #[derive(PartialEq, Clone, Debug)]
-pub enum Mode {
-    Select,
-    Camera,
-    Edit,
-}
-
-#[derive(PartialEq, Clone, Debug)]
 pub enum Command {
     None
 }
@@ -41,8 +34,6 @@ pub struct Context {
     pub cmd                     : Option<Command>,
 
     pub palette                 : Palette,
-
-    pub curr_mode               : Mode,
 
     pub font                    : Option<Font>,
     pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
@@ -119,9 +110,9 @@ impl Context {
 
                         let mut tool = Tool::new(string.into());
 
-                        tool.init(&mut engine);
+                        tool.init(&mut engine, name);
                         let name = tool.name();
-                        println!("{}", name);
+                        //println!("{}", name);
 
                         curr_tool = tool.clone();
 
@@ -201,8 +192,6 @@ impl Context {
             cmd                 : None,
 
             palette,
-
-            curr_mode           : Mode::Select,
 
             font,
             icons,

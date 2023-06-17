@@ -567,25 +567,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
-name = "forgedtiles"
-version = "0.1.0"
-dependencies = [
- "fontdue",
- "lazy_static",
- "maths-rs",
- "noise",
- "png",
- "rayon",
- "rhai",
- "rust-embed",
- "rustc-hash",
- "serde",
- "serde_json",
- "theframework",
- "uuid",
-]
-
-[[package]]
 name = "fxhash"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1666,6 +1647,25 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "shape-z"
+version = "0.1.0"
+dependencies = [
+ "fontdue",
+ "lazy_static",
+ "maths-rs",
+ "noise",
+ "png",
+ "rayon",
+ "rhai",
+ "rust-embed",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "theframework",
+ "uuid",
 ]
 
 [[package]]
