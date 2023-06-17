@@ -1782,11 +1782,23 @@ dependencies = [
  "fontdue",
  "log",
  "pixels",
+ "therenderer",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
  "winit",
  "winit_input_helper",
+]
+
+[[package]]
+name = "therenderer"
+version = "0.1.0"
+dependencies = [
+ "fontdue",
+ "maths-rs",
+ "rayon",
+ "rust-embed",
+ "rustc-hash",
 ]
 
 [[package]]

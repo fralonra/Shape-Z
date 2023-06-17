@@ -4,6 +4,13 @@ pub mod text_button;
 pub mod settings;
 pub mod browser;
 pub mod modebar;
+pub mod color_widget;
+
+#[derive(Clone, Debug)]
+
+pub enum WidgetValue {
+    Color(String, u8)
+}
 
 #[allow(unused)]
 pub trait Widget : Sync + Send {

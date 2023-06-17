@@ -2,11 +2,12 @@ use crate::prelude::*;
 
 use rhai::{ Engine, Scope, AST, Dynamic, Map };
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Tool {
-    pub script          : String,
-    pub ast             : Option<AST>,
-    pub this_map        : Dynamic,
+    pub script                  : String,
+    pub ast                     : Option<AST>,
+    pub this_map                : Dynamic,
+    pub widget_values           : Vec<WidgetValue>
 }
 
 impl Tool {
@@ -16,8 +17,9 @@ impl Tool {
 
         Self {
             script,
-            ast         : None,
-            this_map    : this_map.into(),
+            ast                 : None,
+            this_map            : this_map.into(),
+            widget_values       : vec![],
         }
     }
 

@@ -42,7 +42,7 @@ impl TheTrait for Editor {
     }
 
     /// Draw a circle in the middle of the window
-    fn draw(&mut self, pixels: &mut [u8], ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
 
         self.context.width = ctx.width;
         self.context.height = ctx.height;
@@ -68,7 +68,7 @@ impl TheTrait for Editor {
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_down(&mut self, x: f32, y: f32) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
 
         self.ui_drag = false;
         if self.ui.touch_down(x, y, &mut self.context) {
@@ -133,7 +133,7 @@ impl TheTrait for Editor {
 
 
     /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_dragged(&mut self, x: f32, y: f32) -> bool {
+    fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
 
         if self.ui_drag && self.ui.touch_dragged(x, y, &mut self.context) {
             self.process_cmds();
@@ -161,7 +161,7 @@ impl TheTrait for Editor {
         }
     }
 
-    fn touch_up(&mut self, x: f32, y: f32) -> bool {
+    fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         self.ui_drag = false;
 
         if self.ui.touch_up(x, y, &mut self.context) {
