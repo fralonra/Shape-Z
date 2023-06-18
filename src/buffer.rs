@@ -78,7 +78,7 @@ impl ColorBuffer {
                     if x > at.0 && x < at.0 + self.width {
                         if y > at.1 && y < at.1 + self.height {
                             let o = (x - at.0) * 4 + (y - at.1) * self.width * 4;
-                            let c = [(self.pixels[o] * 255.0) as u8, (self.pixels[o+1] * 255.0) as u8, (self.pixels[o+2] * 255.0) as u8, (self.pixels[o+3] * 255.0) as u8];
+                            let c = [(self.pixels[o].powf(0.4545) * 255.0) as u8, (self.pixels[o+1].powf(0.4545) * 255.0) as u8, (self.pixels[o+2].powf(0.4545) * 255.0) as u8, (self.pixels[o+3].powf(0.4545) * 255.0) as u8];
                             pixel.copy_from_slice(&c);
                         }
                     }

@@ -39,6 +39,7 @@ impl Widget for PaletteBar {
         let mut pr = (x, y, size, size);
 
         let mut in_row = 0;
+        let mut row_counter = 0;
 
         for index in 0..context.palette.colors.len() {
 
@@ -57,6 +58,7 @@ impl Widget for PaletteBar {
                 pr.0 = self.rect.x;
                 pr.1 += size;
                 in_row = -1;
+                row_counter += 1;
             } else {
                 pr.0 += size;
             }
@@ -64,7 +66,7 @@ impl Widget for PaletteBar {
             in_row += 1;
         }
 
-        self.palette_r = Rect::new(x, y, 10 * 20 + 20, 40);
+        self.palette_r = Rect::new(x, y, 8 * size, row_counter * size);
 
         /*
         let mut y = r.1 + 2;
@@ -113,30 +115,40 @@ impl Widget for PaletteBar {
     }
 
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
-
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            /*
-            if (y as usize) < self.rect.y + 42 {
-                context.curr_mode = Mode::Select;
-                return true;
-            } else
-            if (y as usize) < self.rect.y + 42 * 2 {
-                context.curr_mode = Mode::Edit;
-                return true;
-            }*/
-        }
+            if self.palette_r.is_inside((x as usize, y as usize)) {
+                let size = 14.0;
+                let xx: f32 = (x - self.palette_r.x as f32) / size;
+                let yy: f32 = (y - self.palette_r.y as f32) / size;
 
+                let index = (xx.floor() + yy.floor() * 8.0).clamp(0.0, 255.0);
+                context.cmd = Some(Command::ColorIndexChanged(index as u8));
+
+                return true;
+            }
+        }
+        false
+    }
+
+    fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+        if self.rect.is_inside((x as usize, y as usize)) {
+
+            if self.palette_r.is_inside((x as usize, y as usize)) {
+                let size = 14.0;
+                let xx: f32 = (x - self.palette_r.x as f32) / size;
+                let yy: f32 = (y - self.palette_r.y as f32) / size;
+
+                let index = (xx.floor() + yy.floor() * 8.0).clamp(0.0, 255.0);
+                context.cmd = Some(Command::ColorIndexChanged(index as u8));
+
+                return true;
+            }
+        }
         false
     }
 
     /*
-    fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
-
-
-        true
-    }
-
     fn touch_up(&mut self, _x: f32, _y: f32, context: &mut Context) -> bool {
         false
     }*/

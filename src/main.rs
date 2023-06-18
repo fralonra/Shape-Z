@@ -13,6 +13,7 @@ pub mod tile;
 pub mod palette;
 pub mod tool;
 pub mod script;
+pub mod hashes;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -47,14 +48,15 @@ pub mod prelude {
     pub use crate::palette::Palette;
     pub use crate::tool::Tool;
     pub use crate::script::*;
+    pub use crate::hashes::*;
 }
 
 use prelude::*;
 
 fn main() {
 
-    let circle = Editor::new();
+    let editor = Editor::new();
     let mut app = TheApp::new();
 
-    _ = app.run(Box::new(circle));
+    _ = app.run(Box::new(editor));
 }

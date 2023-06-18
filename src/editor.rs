@@ -24,6 +24,9 @@ pub struct Editor {
     click_drag          : Option<(f32, f32)>,
 
     ui_drag             : bool,
+
+    path_iter           : i32,
+    path_max            : i32,
 }
 
 impl TheTrait for Editor {
@@ -38,6 +41,9 @@ impl TheTrait for Editor {
             click_drag  : None,
 
             ui_drag     : false,
+
+            path_iter   : 0,
+            path_max    : 100,
         }
     }
 
@@ -46,6 +52,8 @@ impl TheTrait for Editor {
 
         self.context.width = ctx.width;
         self.context.height = ctx.height;
+
+        //println!("update {}", self.path_iter);
 
         // Make sure world has the correct size
         let world_width = ctx.width - self.ui.settings_width -  self.ui.palettebar_width;
@@ -57,10 +65,18 @@ impl TheTrait for Editor {
         }
 
         // Render world
-        if WORLD.lock().unwrap().needs_update {
-            WORLD.lock().unwrap().render(&mut self.buffer, &self.context);
+        if WORLD.lock().unwrap().needs_update || self.path_iter < self.path_max {
+            WORLD.lock().unwrap().render(&mut self.buffer, &self.context, self.path_iter);
+
+            if WORLD.lock().unwrap().needs_update {
+                self.path_iter = 0;
+            } else {
+                self.path_iter += 1;
+            }
+
             WORLD.lock().unwrap().needs_update = false;
         }
+
         self.buffer.convert_to_u8_at(pixels, (self.ui.palettebar_width, self.ui.toolbar_height, ctx.width, ctx.height));
 
         // Draw UI
@@ -129,6 +145,7 @@ impl TheTrait for Editor {
 
             if let Some(mut hit) = hit {
                 hit.compute_side();
+                WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
                 self.context.curr_tool.hit(&self.context.engine, hit);
                 consumed = true;
             }
@@ -177,6 +194,13 @@ impl TheTrait for Editor {
         }
     }
 
+    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+        if self.path_iter < self.path_max {
+            true
+        } else {
+            false
+        }
+    }
 
 }
 
@@ -190,6 +214,15 @@ impl MyEditor for Editor {
     fn process_cmds(&mut self) {
         if let Some(cmd) = &self.context.cmd {
             match cmd {
+                Command::ColorIndexChanged(index) => {
+                    for (w_index, v) in self.context.curr_tool.widget_values.clone().iter().enumerate() {
+                        match v {
+                            WidgetValue::Color(name, i) => {
+                                self.context.curr_tool.widget_values[w_index] = WidgetValue::Color(name.clone(), *index);
+                            }
+                        }
+                    }
+                },
                 _ => {}
             }
         }

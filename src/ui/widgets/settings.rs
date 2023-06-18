@@ -84,6 +84,19 @@ impl Widget for Settings {
         ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
         ctx.draw.rect(pixels, &(r.0, r.1, r.2, 2), ctx.width, &[0, 0, 0, 255]);
 
+        let mut x =  r.0 + 15;
+        let mut y =  r.1 + 10;
+
+        for v in &context.curr_tool.widget_values {
+            match v {
+                WidgetValue::Color(name, index) => {
+                    ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
+                    y += 20;
+                    ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
+                }
+            };
+        }
+
         /*
         if context.curr_key.is_none() { return; }
 

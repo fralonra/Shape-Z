@@ -24,7 +24,7 @@ impl HitRecord {
             normal      : Vec3f::zero(),
             uv          : Vec3f::zero(),
             value       : 0,
-            side        : SideEnum::Top
+            side        : SideEnum::Top,
         }
     }
 

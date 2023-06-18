@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
-use rhai::{ Engine, FuncArgs };
+use rhai::{ Engine };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Tile {
@@ -226,7 +226,9 @@ impl Tile {
 
         // let bounds_distance = (self.size as f32 - ro) * rdi;
 
-        for _ii in 0..(self.size * self.size) {
+        let max_steps = (self.size as f32 * 2.4).ceil() as i32;
+
+        for _ii in 0..max_steps {
 
             key = Vec3i::from(i);
             if let Some(voxel) = self.get_voxel(key.x as usize, key.y as usize, key.z as usize) {
@@ -271,6 +273,25 @@ impl Tile {
         self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some(value as u8));
     }
 
+    /// Set the voxel at the given position
+    pub fn set_voxel_color_script(&mut self, loc: ScriptVec3i, value: String) {
+        let mut color_index : Option<u8> = None;
+
+        for v in &WORLD.lock().unwrap().curr_tool.widget_values {
+            match v {
+                WidgetValue::Color(name, index) => {
+                    if *name == value {
+                        color_index = Some(*index);
+                    }
+                }
+            }
+        }
+
+        if let Some(color_index) = color_index {
+            self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some(color_index as u8));
+        }
+    }
+
     /// Clear the voxel at the given position
     pub fn clear_voxel_script(&mut self, loc: ScriptVec3i) {
         self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, None);
@@ -282,6 +303,7 @@ impl Tile {
         engine.register_type_with_name::<Tile>("Tile")
             .register_get("size", Tile::get_size)
             .register_fn("set", Tile::set_voxel_script)
+            .register_fn("set", Tile::set_voxel_color_script)
             .register_fn("clear", Tile::clear_voxel_script);
     }
 

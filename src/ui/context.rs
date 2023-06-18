@@ -3,7 +3,8 @@ use fontdue::Font;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Command {
-    None
+    None,
+    ColorIndexChanged(u8)
 }
 
 pub struct Context {

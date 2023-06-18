@@ -80,4 +80,39 @@ impl Palette {
     pub fn at_f(&self, index: u8) -> [f32; 4] {
         self.colors_f[index as usize]
     }
+
+    /// Get the f32 based color at the given index and convrts it to linear space
+    pub fn at_f_to_linear(&self, index: u8) -> [f32; 4] {
+        let mut c = self.colors_f[index as usize].clone();
+        c[0] = c[0].powf(2.2);
+        c[1] = c[1].powf(2.2);
+        c[2] = c[2].powf(2.2);
+        c
+    }
+
+    /// Returns the closest color index
+    pub fn closest(&self, r: f32, g: f32, b: f32) -> u8 {
+        let mut index = 0;
+        let mut d = f32::MAX;
+
+        for i in 0..self.colors_f.len() {
+
+            let dd =
+                ((r - self.colors_f[i][0]) * 0.30).powf(2.0) +
+                ((g - self.colors_f[i][1]) * 0.59).powf(2.0) +
+                ((b - self.colors_f[i][2]) * 0.11).powf(2.0);
+
+            // let dd =
+            //     ((r - self.colors_f[i][0]) * 1.0).powf(2.0) +
+            //     ((g - self.colors_f[i][1]) * 1.0).powf(2.0) +
+            //     ((b - self.colors_f[i][2]) * 1.0).powf(2.0);
+
+            if dd < d {
+                d = dd;
+                index = i as u8;
+            }
+        }
+
+        index
+    }
 }

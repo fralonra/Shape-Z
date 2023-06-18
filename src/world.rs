@@ -1,12 +1,15 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
+use rand::{thread_rng, Rng, rngs::ThreadRng};
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Clone)]
 pub struct World {
     pub camera              : Camera,
 
     pub tiles               : FxHashMap<(i32, i32, i32), Tile>,
     pub needs_update        : bool,
+
+    pub curr_tool           : Tool,
 }
 
 impl World {
@@ -23,6 +26,8 @@ impl World {
 
             tiles,
             needs_update    : true,
+
+            curr_tool       : Tool::new("".into()),
         }
     }
 
@@ -40,12 +45,16 @@ impl World {
         self.tiles.insert((at.x, at.y, at.z), tile);
     }
 
-    pub fn render(&self, buffer: &mut ColorBuffer, context: &Context) {
+    pub fn render(&self, buffer: &mut ColorBuffer, context: &Context, iteration: i32) {
 
         let width = buffer.width;
         let height = buffer.height as f32;
 
         let screen = vec2f(buffer.width as f32, buffer.height as f32);
+
+        let time = (iteration as f32 * 1000.0 / 60.0) / 1000.0;
+
+        let start = self.get_time();
 
         buffer.pixels
             .par_rchunks_exact_mut(width * 4)
@@ -59,18 +68,87 @@ impl World {
 
                     let uv = vec2f(x / width as f32, 1.0 - (y / height));
 
-                    let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
+                    let mut rng: ThreadRng = thread_rng();
+
+                    // let cam_off = hash3_2(vec3f(time, uv.x, uv.y));
+                    let cam_off = vec2f(rng.gen(), rng.gen());
+                    //let cam_off = vec2f(0.5, 0.5);
+                    let ray = self.camera.create_ray(uv, screen, cam_off);
 
                     let mut color = [uv.x, uv.y, 0.0, 1.0];
 
                     if let Some(hit) = self.dda_recursive(&ray) {
                         //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
-                        color = context.palette.at_f(hit.value);
+                        color = context.palette.at_f_to_linear(hit.value);
+
+                        // Ambient occlusion
+                        let pos = hit.hitpoint - 0.01 * hit.normal;
+
+                        let z = hit.normal;
+                        let x = normalize(cross(z, vec3f(-0.36, -0.48, 0.8)));
+                        let y = normalize(cross(z, x));
+
+                        // let hash = hash3_2(vec3f(time + 0.2, uv.x, uv.y));
+                        let hash = vec2f(rng.gen(), rng.gen());
+                        let mut a = sqrt(hash.x);
+                        let b = a * cos(6.283185 * hash.y);
+                        let c = a * sin(6.283185 * hash.y);
+                        a = sqrt(1.0 - hash.x);
+                        let shade_dir = b * x + c * y + a * z;
+
+                        let ambient;
+                        if let Some(_) = self.dda_recursive(&Ray::new(pos, shade_dir)) {
+                            ambient = 0.0;
+                        } else {
+                            ambient = 1.0;
+                        }
+
+                        // Sun
+                        let mut z = vec3f(0.48, 0.36, 0.8);
+                        let x = normalize(cross(z, vec3f(0.0, 1.0, 0.0)));
+                        let y = normalize(cross(z, x));
+
+                        // let hash = hash3_2(vec3f(time + 0.3, uv.x, uv.y));
+                        let hash = vec2f(rng.gen(), rng.gen());
+                        //let hash = vec2f(0.5, 0.5);
+                        let a = sqrt(hash.x);
+                        let b = a * cos(6.283185 * hash.y);
+                        let c = a * sin(6.283185 * hash.y);
+                        z += 0.04 * (b * x + c * y);
+
+                        let sun;
+                        if let Some(_) = self.dda_recursive(&Ray::new(pos, normalize(z))) {
+                            sun = 0.0;
+                        } else {
+                            sun = 1.0;
+                        }
+
+                        color[0] *= 0.6 * ambient + 0.4 * sun;
+                        color[1] *= 0.6 * ambient + 0.4 * sun;
+                        color[2] *= 0.6 * ambient + 0.4 * sun;
+
+                        // Clip color to the palette
+                        let index = context.palette.closest(color[0], color[1], color[2]);
+                        color = context.palette.at_f(index);
                     }
 
-                    pixel.copy_from_slice(&color);
+                    #[inline(always)]
+                    pub fn mix_color(a: &[f32], b: &[f32], v: f32) -> [f32; 4] {
+                        [   (1.0 - v) * a[0] + b[0] * v,
+                            (1.0 - v) * a[1] + b[1] * v,
+                            (1.0 - v) * a[2] + b[2] * v,
+                            (1.0 - v) * a[3] + b[3] * v ]
+                    }
+
+                    // Accumulate
+                    let mix = mix_color(pixel, &color, 1.0 / (iteration + 1) as f32);
+                    pixel.copy_from_slice(&mix);
                 }
         });
+
+        let stop = self.get_time();
+        println!("tick time {:?}", stop - start);
+
     }
 
     pub fn hit_at(&self, pos: Vec2f, buffer: &ColorBuffer) -> Option<HitRecord> {
@@ -182,14 +260,14 @@ impl World {
         let mut i = floor(ro);
         let mut dist = 0.0;
 
-        let mut normal = Vec3f::zero();
+        let mut normal;//= Vec3f::zero();
         let srd = signum(rd);
 
         let rdi = 1.0 / (2.0 * rd);
 
-        let mut key: Vec3<i32> = Vec3i::zero();
+        let mut key: Vec3<i32>;// = Vec3i::zero();
 
-        for _ii in 0..40 {
+        for _ii in 0..20 {
             key = Vec3i::from(i);
 
             if let Some(tile) = self.tiles.get(&(key.x, key.y, key.z)) {
@@ -197,10 +275,12 @@ impl World {
                 let mut lro = ray.at(dist);
                 lro -= Vec3f::from(key);
                 lro *= tile.size as f32;
-                lro = lro - rd * 1.0;
+                //lro = lro - rd * 1.0;
 
                 if let Some(mut hit) = tile.dda(&Ray::new(lro, rd)) {
                     hit.key = key;
+                    hit.hitpoint = ray.at(dist + hit.distance / (tile.size as f32));
+                    hit.distance = dist;
                     return Some(hit);
                 }
             }
@@ -225,6 +305,15 @@ impl World {
         } else {
             None
         }*/
+    }
+
+    /// Gets the current time in milliseconds
+    fn get_time(&self) -> u128 {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let stop = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+            stop.as_millis()
     }
 
 }

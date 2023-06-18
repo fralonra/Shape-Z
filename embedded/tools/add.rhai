@@ -4,7 +4,7 @@ fn init() {
     this.name = "Add";
 
     this.parameters = [
-        color("test", 10)
+        color("Color", 20)
     ];
 }
 
@@ -38,6 +38,6 @@ fn hit(record) {
         add_key -= vec3i(0, 0, 1);
     }
 
-    tile.set(add_key, 10);
+    tile.set(add_key, "Color");
     set_tile(record.key, tile);
 }
