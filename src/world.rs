@@ -56,7 +56,7 @@ impl World {
         let screen = vec2f(buffer.width as f32, buffer.height as f32);
 
         //let time = (iteration as f32 * 1000.0 / 60.0) / 1000.0;
-        let start = self.get_time();
+        let _start = self.get_time();
 
         buffer.pixels
             .par_rchunks_exact_mut(width * 4)
@@ -95,7 +95,7 @@ impl World {
 
                         if let Some(hit) = self.dda_recursive(&ray) {
                             //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
-                            color = context.palette.at_f_to_linear(hit.value);
+                            color = context.palette.at_f_to_linear(hit.value.0);
 
                             // Ambient occlusion
                             let pos = hit.hitpoint - 0.01 * hit.normal;
@@ -170,7 +170,7 @@ impl World {
                         }
                     } else {
 
-                        let max_depth = 2;
+                        let max_depth = 4;
 
                         let mut acc = Vec3f::zero();
                         let mut mask = Vec3f::one();
@@ -187,21 +187,21 @@ impl World {
                                 let n = hit.normal;
                                 let nl = n * signum(-dot(n, ray.d));
 
-                                let roughness = 1.0;//1.0 - spheres[id].smoothness * spheres[id].smoothness;
+                                let material = &context.materials[hit.value.1 as usize];
+
+                                let roughness = material.roughness;
                                 let alpha = roughness * roughness;
-                                let metallic = 0.01;//spheres[id].metallic;
-                                let reflectance = 1.0;//spheres[id].reflectance;
-                                let diffuse = context.palette.at_vec_to_linear(hit.value);//spheres[id].diffuse;
-                                //let specular = 1.0 - diffuse;
-                                let color = diffuse;//spheres[id].albedo * diffuse + spheres[id].ks * specular;
+                                let metallic = material.metallic;
+                                let reflectance = material.reflectance;
+                                let diffuse = context.palette.at_vec_to_linear(hit.value.0);
+                                let color = diffuse;
+                                let emission = material.emission * diffuse;
 
                                 let mut brdf = vec3f(0.0, 0.0, 0.0);
 
                                 let light_pos = vec3f(0.0, 6.0, 0.0);
                                 let light_radius = 1.0;
                                 let light_emission = vec3f(200.0, 200.0, 200.0);
-
-                                let voxel_emission = vec3f(0.0, 0.0, 0.0);
 
                                 let x = hit.hitpoint - 0.005 * n;
 
@@ -232,7 +232,7 @@ impl World {
                                     let theta = 2.0 * pi * xsi_2;
                                     let direction = angle_to_dir(nl, theta, phi);
                                     ray = Ray::new(x, direction);
-                                    acc += mask * voxel_emission + mask * color * brdf;
+                                    acc += mask * emission + mask * color * brdf;
                                     mask *= color;
                                 } else {
 
@@ -260,7 +260,7 @@ impl World {
                                         e += (light_emission * clamp(dot(l, n),0.0,1.0) * omega) / pi;
                                     }
 
-                                    acc += mask * voxel_emission + mask * color * e;
+                                    acc += mask * emission + mask * color * e;
                                     mask *= color;
                                     ray = Ray::new(x, d);
                                 }
@@ -287,8 +287,8 @@ impl World {
                 }
         });
 
-        let stop = self.get_time();
-        println!("renter time {:?}, iter: {}", stop - start, iteration);
+        let _stop = self.get_time();
+        println!("renter time {:?}, iter: {}", _stop - _start, iteration);
 
     }
 

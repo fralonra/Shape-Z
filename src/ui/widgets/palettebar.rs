@@ -107,8 +107,6 @@ impl Widget for PaletteBar {
 
             ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &color, theframework::thedraw2d::TheTextAlignment::Center);
         }
-
-
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
@@ -122,17 +120,20 @@ impl Widget for PaletteBar {
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if self.mode == Mode::Color {
-                if self.palette_r.is_inside((x as usize, y as usize)) {
-                    let size = 16.0;
-                    let xx: f32 = (x - self.palette_r.x as f32) / size;
-                    let yy: f32 = (y - self.palette_r.y as f32) / size;
+            if self.palette_r.is_inside((x as usize, y as usize)) {
+                let size = 16.0;
+                let xx: f32 = (x - self.palette_r.x as f32) / size;
+                let yy: f32 = (y - self.palette_r.y as f32) / size;
 
-                    let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
+                let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
+
+                if self.mode == Mode::Color {
                     context.cmd = Some(Command::ColorIndexChanged(index as u8));
-
-                    return true;
+                } else {
+                    context.cmd = Some(Command::MaterialIndexChanged(index as u8));
                 }
+
+                return true;
             }
 
             if (y as usize) > self.rect.y + self.rect.height - 30 {
@@ -155,17 +156,19 @@ impl Widget for PaletteBar {
     fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if self.mode == Mode::Color {
-                if self.palette_r.is_inside((x as usize, y as usize)) {
-                    let size = 16.0;
-                    let xx: f32 = (x - self.palette_r.x as f32) / size;
-                    let yy: f32 = (y - self.palette_r.y as f32) / size;
+            if self.palette_r.is_inside((x as usize, y as usize)) {
+                let size = 16.0;
+                let xx: f32 = (x - self.palette_r.x as f32) / size;
+                let yy: f32 = (y - self.palette_r.y as f32) / size;
 
-                    let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
+                let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
+                if self.mode == Mode::Color {
                     context.cmd = Some(Command::ColorIndexChanged(index as u8));
-
-                    return true;
+                } else {
+                    context.cmd = Some(Command::MaterialIndexChanged(index as u8));
                 }
+
+                return true;
             }
         }
         false

@@ -5,6 +5,7 @@ use fontdue::Font;
 pub enum Command {
     None,
     ColorIndexChanged(u8),
+    MaterialIndexChanged(u8),
     EditStateSwitched,
 }
 
@@ -37,6 +38,7 @@ pub struct Context {
     pub cmd                     : Option<Command>,
 
     pub palette                 : Palette,
+    pub materials               : Vec<Material>,
 
     pub font                    : Option<Font>,
     pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
@@ -48,22 +50,9 @@ pub struct Context {
     pub engine                  : rhai::Engine,
     pub tools                   : FxHashMap<String, Tool>,
 
-    /*
-    pub curr_perspective    : Perspective,
-    pub curr_shape          : usize,
-    pub curr_pattern        : usize,
-    pub curr_color_index    : usize,
+    pub curr_color_index        : u8,
+    pub curr_material_index     : u8
 
-    pub curr_property       : Props,
-    pub curr_properties     : Properties,
-
-    pub selected_pos        : Option<(i32, i32)>,
-    pub selected_id         : Option<Uuid>,
-
-    pub font                : Option<Font>,
-    pub icons               : FxHashMap<String, (Vec<u8>, u32, u32)>,
-
-    pub palette             : Palette,*/
 }
 
 impl Context {
@@ -138,38 +127,26 @@ impl Context {
             }
         }
 
-        // --
-        /*
-        let palette = Palette::new();
+        let mut materials : Vec<Material> = vec![];
 
-        let mut shapes : Vec<Tile> = vec![];
+        for metallic in 0..15 {
+            for roughness in 0..15 {
 
-        /*
-        let mut tile = Tile::new(100);
-        tile.shapes.push(Box::new(Wall::new()));
-        tile.shapes[0].update();
-        tile.render(&palette);
+                let mut material = Material::new(vec3f(0.5, 0.5, 0.5));
+                material.metallic = if metallic == 14 { 1.0 } else { (1.0 / 15.0) * metallic as f32 };
+                material.roughness = if roughness == 14 { 1.0 } else { (1.0 / 15.0) * roughness as f32 };
 
-        shapes.push(tile);*/
+                if metallic > 5 {
+                    material.emission = vec3f(2.0, 2.0, 2.0);
+                }
 
-        let mut tile = Tile::new(100);
-        tile.shapes.push(Box::new(Voxels::new()));
-        tile.shapes[0].update();
-        tile.render(&palette);
+                //println!("{} {}", material.roughness, material.metallic);
 
-        shapes.push(tile);
+                materials.push(material);
+            }
+        }
 
-        let mut patterns : Vec<Box<dyn Pattern>> = vec![];
-
-        let brick = Brick::new();
-        patterns.push(Box::new(brick));
-
-        let value = Value::new();
-        patterns.push(Box::new(value));
-
-        let voronoi: Voronoi = Voronoi::new();
-        patterns.push(Box::new(voronoi));
-        */
+        //println!("{}", materials.len());
 
         Self {
             // shapes,
@@ -201,6 +178,7 @@ impl Context {
             cmd                 : None,
 
             palette,
+            materials,
 
             font,
             icons,
@@ -210,23 +188,8 @@ impl Context {
             engine,
             tools,
 
-            // curr_mode       : Mode::InsertShape,
-            // curr_shape      : 0,
-            // curr_pattern    : 0,
-            // curr_color_index: 3,
-
-            // curr_property   : Props::Shape,
-            // curr_properties : Properties::new(),
-
-            // selected_pos    : None,
-            // selected_id     : None,
-
-            // curr_perspective: Perspective::Iso,
-
-            // font,
-            // icons,
-
-            // palette,
+            curr_color_index    : 0,
+            curr_material_index : 0,
         }
     }
 }

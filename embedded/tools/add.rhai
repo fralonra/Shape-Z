@@ -5,7 +5,8 @@ fn init() {
     this.role = "Voxel";
 
     this.parameters = [
-        color("Color", 20)
+        color("Color", 20),
+        material("Material", 20)
     ];
 }
 
@@ -39,6 +40,6 @@ fn hit(record) {
         add_key -= vec3i(0, 0, 1);
     }
 
-    tile.set(add_key, "Color");
+    tile.set(add_key, "Color", "Material");
     set_tile(record.key, tile);
 }

@@ -80,6 +80,9 @@ impl Tool {
                                     match value.value_type {
                                         ScriptValueType::Color => {
                                             values.push(WidgetValue::Color(value.name.clone(), value.index));
+                                        },
+                                        ScriptValueType::Material => {
+                                            values.push(WidgetValue::Material(value.name.clone(), value.index));
                                         }
                                     }
                                 }

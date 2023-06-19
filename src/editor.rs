@@ -237,11 +237,24 @@ impl MyEditor for Editor {
         if let Some(cmd) = &self.context.cmd {
             match cmd {
                 Command::ColorIndexChanged(index) => {
+                    self.context.curr_color_index = *index;
                     for (w_index, v) in self.context.curr_tool.widget_values.clone().iter().enumerate() {
                         match v {
                             WidgetValue::Color(name, _i) => {
                                 self.context.curr_tool.widget_values[w_index] = WidgetValue::Color(name.clone(), *index);
-                            }
+                            },
+                            _ => {},
+                        }
+                    }
+                },
+                Command::MaterialIndexChanged(index) => {
+                    self.context.curr_material_index = *index;
+                    for (w_index, v) in self.context.curr_tool.widget_values.clone().iter().enumerate() {
+                        match v {
+                            WidgetValue::Material(name, _i) => {
+                                self.context.curr_tool.widget_values[w_index] = WidgetValue::Material(name.clone(), *index);
+                            },
+                            _ => {},
                         }
                     }
                 },

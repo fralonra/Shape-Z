@@ -10,7 +10,7 @@ pub struct HitRecord {
     pub distance        : f32,
     pub normal          : Vec3f,
     pub uv              : Vec3f,
-    pub value           : u8,
+    pub value           : (u8, u8),
     pub side            : SideEnum,
 }
 
@@ -23,7 +23,7 @@ impl HitRecord {
             distance    : 0.0,
             normal      : Vec3f::zero(),
             uv          : Vec3f::zero(),
-            value       : 0,
+            value       : (0, 0),
             side        : SideEnum::Top,
         }
     }
@@ -65,9 +65,9 @@ impl HitRecord {
         ScriptVec3f::from_vec3f(self.normal)
     }
 
-    pub fn get_value(&mut self) -> i32 {
-        self.value as i32
-    }
+    // pub fn get_value(&mut self) -> i32 {
+    //     self.value as i32
+    // }
 
     pub fn get_side(&mut self) -> SideEnum {
         self.side.clone()
@@ -80,7 +80,7 @@ impl HitRecord {
             .register_get("key", HitRecord::get_key)
             .register_get("tile_key", HitRecord::get_tile_key)
             .register_get("normal", HitRecord::get_normal)
-            .register_get("value", HitRecord::get_value)
+            //.register_get("value", HitRecord::get_value)
             .register_get("side", HitRecord::get_side);
     }
 }

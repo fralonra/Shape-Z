@@ -80,6 +80,11 @@ impl Widget for Settings {
                     ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
                     y += 20;
                     ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
+                },
+                WidgetValue::Material(name, index) => {
+                    ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
+                    y += 20;
+                    ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
                 }
             };
         }

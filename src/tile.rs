@@ -7,7 +7,7 @@ pub struct Tile {
     pub camera              : Camera,
     pub size                : usize,
 
-    pub data                : Vec<Option<u8>>,
+    pub data                : Vec<Option<(u8, u8)>>,
 }
 
 impl Tile {
@@ -28,7 +28,7 @@ impl Tile {
             for y in 0..size {
                 let index = 0 + y * size + z * size * size;
 
-                data[index] = Some(20);
+                data[index] = Some((20, 20));
             }
         }
 
@@ -37,7 +37,7 @@ impl Tile {
             for z in 0..size {
                 let index = x + z * size * size;
 
-                data[index] = Some(20);
+                data[index] = Some((20, 20));
             }
         }
 
@@ -55,7 +55,7 @@ impl Tile {
     }
 
     /// Get a voxel
-    pub fn get_voxel(&self, x: usize, y: usize, z: usize) -> Option<u8> {
+    pub fn get_voxel(&self, x: usize, y: usize, z: usize) -> Option<(u8, u8)> {
         if x < self.size && y < self.size && z < self.size {
             self.data[self.index(x, y, z)]
         } else {
@@ -64,7 +64,7 @@ impl Tile {
     }
 
     /// Sets a voxel
-    pub fn set_voxel(&mut self, x: usize, y: usize, z: usize, voxel: Option<u8>)  {
+    pub fn set_voxel(&mut self, x: usize, y: usize, z: usize, voxel: Option<(u8, u8)>)  {
         if x < self.size && y < self.size && z < self.size {
             let index = self.index(x, y, z);
             self.data[index] = voxel;
@@ -220,7 +220,7 @@ impl Tile {
         let mut hit = false;
 
         let mut key = Vec3i::zero();
-        let mut value : u8 = 0;
+        let mut value : (u8, u8) = (0, 0);
 
         let max_steps = (self.size as f32 * 3.0).ceil() as i32;
 
@@ -261,26 +261,35 @@ impl Tile {
     }
 
     /// Set the voxel at the given position
-    pub fn set_voxel_script(&mut self, loc: ScriptVec3i, value: i32) {
-        self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some(value as u8));
+    pub fn set_voxel_script(&mut self, loc: ScriptVec3i, color_value: i32, material_value: i32) {
+        self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some((color_value as u8, material_value as u8)));
     }
 
     /// Set the voxel at the given position
-    pub fn set_voxel_color_script(&mut self, loc: ScriptVec3i, value: String) {
+    pub fn set_voxel_color_script(&mut self, loc: ScriptVec3i, color_value: String, material_value: String) {
         let mut color_index : Option<u8> = None;
+        let mut material_index : Option<u8> = None;
 
         for v in &WORLD.lock().unwrap().curr_tool.widget_values {
             match v {
                 WidgetValue::Color(name, index) => {
-                    if *name == value {
+                    if *name == color_value {
                         color_index = Some(*index);
                     }
-                }
+                },
+                WidgetValue::Material(name, index) => {
+                    if *name == material_value {
+                        material_index = Some(*index);
+                    }
+                },
             }
         }
 
         if let Some(color_index) = color_index {
-            self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some(color_index as u8));
+            if let Some(material_index) = material_index {
+                println!("{}, {}", color_index, material_index);
+                self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some((color_index as u8, material_index as u8)));
+            }
         }
     }
 

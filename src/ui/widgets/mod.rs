@@ -10,7 +10,8 @@ pub mod switch_button;
 #[derive(Clone, Debug)]
 
 pub enum WidgetValue {
-    Color(String, u8)
+    Color(String, u8),
+    Material(String, u8)
 }
 
 #[allow(unused)]

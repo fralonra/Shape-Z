@@ -304,6 +304,7 @@ impl FuncArgs for ScriptVec3f {
 #[derive(Debug, Clone)]
 pub enum ScriptValueType {
     Color,
+    Material,
 }
 
 
@@ -327,9 +328,19 @@ impl ScriptValue {
         }
     }
 
+    pub fn material(name: String, index: i32) -> Self {
+        Self {
+            value_type : ScriptValueType::Material,
+
+            name,
+            index       : index as u8,
+        }
+    }
+
     pub fn register(engine: &mut Engine) {
         engine.register_type_with_name::<ScriptValue>("Value")
-            .register_fn("color", ScriptValue::color);
+            .register_fn("color", ScriptValue::color)
+            .register_fn("material", ScriptValue::material);
     }
 }
 
