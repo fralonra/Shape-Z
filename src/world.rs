@@ -90,10 +90,10 @@ impl World {
 
                     let mut color;
 
-                    if false {
+                    if context.edit_state {
                         color = [0.15, 0.15, 0.15, 1.0];
 
-                        if let Some(mut hit) = self.dda_recursive(&ray) {
+                        if let Some(hit) = self.dda_recursive(&ray) {
                             //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
                             color = context.palette.at_f_to_linear(hit.value);
 
@@ -187,9 +187,9 @@ impl World {
                                 let n = hit.normal;
                                 let nl = n * signum(-dot(n, ray.d));
 
-                                let roughness = 0.7;//1.0 - spheres[id].smoothness * spheres[id].smoothness;
+                                let roughness = 1.0;//1.0 - spheres[id].smoothness * spheres[id].smoothness;
                                 let alpha = roughness * roughness;
-                                let metallic = 1.0;//spheres[id].metallic;
+                                let metallic = 0.01;//spheres[id].metallic;
                                 let reflectance = 1.0;//spheres[id].reflectance;
                                 let diffuse = context.palette.at_vec_to_linear(hit.value);//spheres[id].diffuse;
                                 //let specular = 1.0 - diffuse;
@@ -265,7 +265,7 @@ impl World {
                                     ray = Ray::new(x, d);
                                 }
                             } else {
-                                acc += mask * vec3f(0.15, 0.15, 0.15);
+                                acc += mask * vec3f(0.5, 0.5, 0.5);
                                 break;
                             }
                         }
@@ -276,6 +276,8 @@ impl World {
                             // Clip color to the palette
                             let index = context.palette.closest(color[0].powf(0.4545), color[1].powf(0.4545), color[2].powf(0.4545));
                             color = context.palette.at_f(index);
+                        } else {
+                            color = [0.15, 0.15, 0.15, 1.0];
                         }
                     }
 

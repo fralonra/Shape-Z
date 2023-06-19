@@ -43,7 +43,7 @@ impl Widget for TextButton {
         self.has_state = true;
     }
 
-    fn get_state(&mut self) -> bool {
+    fn get_state(&self) -> bool {
         self.state
     }
 

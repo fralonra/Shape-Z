@@ -1,11 +1,18 @@
 
 use crate::prelude::*;
 
+#[derive(PartialEq, Debug, Clone)]
+enum Mode {
+    Color,
+    Material
+}
+
 pub struct PaletteBar {
+
+    mode                : Mode,
 
     rect                : Rect,
     palette_r           : Rect,
-
 }
 
 impl Widget for PaletteBar {
@@ -13,9 +20,10 @@ impl Widget for PaletteBar {
     fn new() -> Self {
 
         Self {
+            mode        : Mode::Color,
+
             rect        : Rect::empty(),
             palette_r   : Rect::empty(),
-
         }
     }
 
@@ -33,77 +41,74 @@ impl Widget for PaletteBar {
 
         // Palette
 
-        let x = r.0 + 0;
-        let y = r.1 + 2;
-        let size = 14;
-        let mut pr = (x, y, size, size);
+        if self.mode == Mode::Color {
 
-        let mut in_row = 0;
-        let mut row_counter = 0;
+            let x = r.0 + 0;
+            let y = r.1 + 2;
+            let size = 16;
+            let mut pr = (x, y, size, size);
 
-        for index in 0..context.palette.colors.len() {
+            let mut in_row = 0;
+            let mut row_counter = 0;
 
-            let color = context.palette.at(index as u8);
-            ctx.draw.rect(pixels, &pr, context.width, &color);
+            for index in 0..context.palette.colors.len() {
 
-            // if index == context.curr_color_index {
-            //     if index < 2 {
-            //         context.draw2d.draw_rect_outline(pixels, &pr, context.width, [255, 255, 255, 255]);
-            //     } else {
-            //         context.draw2d.draw_rect_outline(pixels, &pr, context.width, [0, 0, 0, 255]);
-            //     }
-            // }
+                let color = context.palette.at(index as u8);
+                ctx.draw.rect(pixels, &pr, context.width, &color);
 
-            if in_row == 7 {
-                pr.0 = self.rect.x;
-                pr.1 += size;
-                in_row = -1;
-                row_counter += 1;
-            } else {
-                pr.0 += size;
+                // if index == context.curr_color_index {
+                //     if index < 2 {
+                //         context.draw2d.draw_rect_outline(pixels, &pr, context.width, [255, 255, 255, 255]);
+                //     } else {
+                //         context.draw2d.draw_rect_outline(pixels, &pr, context.width, [0, 0, 0, 255]);
+                //     }
+                // }
+
+                if in_row == 9 {
+                    pr.0 = self.rect.x;
+                    pr.1 += size;
+                    in_row = -1;
+                    row_counter += 1;
+                } else {
+                    pr.0 += size;
+                }
+                in_row += 1;
             }
-
-            in_row += 1;
+            row_counter += 1;
+            self.palette_r = Rect::new(x, y, 10 * size, row_counter * size);
         }
 
-        self.palette_r = Rect::new(x, y, 8 * size, row_counter * size);
+        // Switch
 
-        /*
-        let mut y = r.1 + 2;
-        if context.curr_mode == Mode::Select {
-            ctx.draw.rect(pixels, &(r.0, y, 40, 40), ctx.width, &context.color_orange);
+        let mut br: (usize, usize, usize, usize) = r.clone();
+        br.1 = br.1 + br.3 - 30 - 1;
+        br.3 = 30;
+
+        //ctx.draw.rounded_rect_with_border(pixels, &br, context.width,  &context.color_toolbar, &(0.0, 0.0, 0.0, 0.0), &context.color_selected, 1.5);
+
+        let mut left_r = br.clone();
+        left_r.2 = left_r.2 / 2;
+
+        let mut color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_widget };
+
+        ctx.draw.rect(pixels, &left_r, context.width,  &color);
+
+        let mut right_r = left_r.clone();
+        right_r.0 += left_r.2;
+
+        color = if self.mode == Mode::Material { &context.color_selected } else { &context.color_widget };
+
+        ctx.draw.rect(pixels, &right_r, context.width,  &color);
+
+        if let Some(font) = &context.font {
+            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, 20.0, &"COL".to_string(), &color, theframework::thedraw2d::TheTextAlignment::Center);
+
+            color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_widget };
+
+            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &color, theframework::thedraw2d::TheTextAlignment::Center);
         }
-        let move_icon: &(Vec<u8>, u32, u32) = context.icons.get(&"hand-pointing".to_string()).unwrap();
-        ctx.draw.blend_slice(pixels, &move_icon.0, &(r.0 + 8, y + 9, 24, 24), context.width);
 
-        y += 40;
-        if context.curr_mode == Mode::Edit {
-            ctx.draw.rect(pixels, &(r.0, y, 40, 40), ctx.width, &context.color_orange);
-        }
-        let insert_icon = context.icons.get(&"insert".to_string()).unwrap();
-        ctx.draw.blend_slice(pixels, &insert_icon.0, &(r.0 + 8, y + 9, 24, 24), context.width);
-        */
 
-        /*
-        context.draw2d.draw_rounded_rect(pixels, &r, context.width, &context.color_widget, &(10.0, 10.0, 10.0, 10.0));
-
-        if context.curr_mode == Mode::Select {
-            r.3 = 40;
-            context.draw2d.draw_rounded_rect(pixels, &r, context.width, &context.color_selected, &(0.0, 10.0, 0.0, 10.0));
-        } else
-        if context.curr_mode == Mode::InsertShape {
-            r.1 += 40;
-            r.3 = 40;
-            context.draw2d.draw_rounded_rect(pixels, &r, context.width, &context.color_selected, &(0.0, 0.0, 0.0, 0.0));
-        }
-
-        let r: (usize, usize, usize, usize) = self.rect.to_usize();
-
-        let move_icon = context.icons.get(&"hand-pointing".to_string()).unwrap();
-        context.draw2d.blend_slice(pixels, &move_icon.0, &(r.0 + 13, r.1 + 9, 24, 24), context.width);
-        let insert_icon = context.icons.get(&"insert".to_string()).unwrap();
-        context.draw2d.blend_slice(pixels, &insert_icon.0, &(r.0 + 13, r.1 + 49, 24, 24), context.width);
-        */
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
@@ -117,15 +122,31 @@ impl Widget for PaletteBar {
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if self.palette_r.is_inside((x as usize, y as usize)) {
-                let size = 14.0;
-                let xx: f32 = (x - self.palette_r.x as f32) / size;
-                let yy: f32 = (y - self.palette_r.y as f32) / size;
+            if self.mode == Mode::Color {
+                if self.palette_r.is_inside((x as usize, y as usize)) {
+                    let size = 16.0;
+                    let xx: f32 = (x - self.palette_r.x as f32) / size;
+                    let yy: f32 = (y - self.palette_r.y as f32) / size;
 
-                let index = (xx.floor() + yy.floor() * 8.0).clamp(0.0, 255.0);
-                context.cmd = Some(Command::ColorIndexChanged(index as u8));
+                    let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
+                    context.cmd = Some(Command::ColorIndexChanged(index as u8));
 
-                return true;
+                    return true;
+                }
+            }
+
+            if (y as usize) > self.rect.y + self.rect.height - 30 {
+                if (x as usize) < self.rect.x + self.rect.width / 2 {
+                    if self.mode != Mode::Color {
+                        self.mode = Mode::Color;
+                        return true;
+                    }
+                } else {
+                    if self.mode != Mode::Material {
+                        self.mode = Mode::Material;
+                        return true;
+                    }
+                }
             }
         }
         false
@@ -134,15 +155,17 @@ impl Widget for PaletteBar {
     fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if self.palette_r.is_inside((x as usize, y as usize)) {
-                let size = 14.0;
-                let xx: f32 = (x - self.palette_r.x as f32) / size;
-                let yy: f32 = (y - self.palette_r.y as f32) / size;
+            if self.mode == Mode::Color {
+                if self.palette_r.is_inside((x as usize, y as usize)) {
+                    let size = 16.0;
+                    let xx: f32 = (x - self.palette_r.x as f32) / size;
+                    let yy: f32 = (y - self.palette_r.y as f32) / size;
 
-                let index = (xx.floor() + yy.floor() * 8.0).clamp(0.0, 255.0);
-                context.cmd = Some(Command::ColorIndexChanged(index as u8));
+                    let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
+                    context.cmd = Some(Command::ColorIndexChanged(index as u8));
 
-                return true;
+                    return true;
+                }
             }
         }
         false

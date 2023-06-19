@@ -4,7 +4,8 @@ use fontdue::Font;
 #[derive(PartialEq, Clone, Debug)]
 pub enum Command {
     None,
-    ColorIndexChanged(u8)
+    ColorIndexChanged(u8),
+    EditStateSwitched,
 }
 
 pub struct Context {
@@ -39,6 +40,8 @@ pub struct Context {
 
     pub font                    : Option<Font>,
     pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
+
+    pub edit_state              : bool,
 
     // Tools
 
@@ -201,6 +204,8 @@ impl Context {
 
             font,
             icons,
+
+            edit_state          : true,
 
             engine,
             tools,

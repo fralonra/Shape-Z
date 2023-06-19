@@ -5,6 +5,7 @@ pub mod settings;
 pub mod browser;
 pub mod palettebar;
 pub mod color_widget;
+pub mod switch_button;
 
 #[derive(Clone, Debug)]
 
@@ -19,9 +20,11 @@ pub trait Widget : Sync + Send {
 
     fn set_rect(&mut self, rect: Rect);
     fn set_text(&mut self, text: String) {}
+    fn set_text_list(&mut self, text_list: Vec<String>) {}
+
     fn set_cmd(&mut self, cmd: Command) {}
 
-    fn get_state(&mut self) -> bool { false }
+    fn get_state(&self) -> bool { false }
     fn set_has_state(&mut self, state: bool) {}
 
     fn is_visible(&self) -> bool { return true; }

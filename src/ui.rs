@@ -11,6 +11,7 @@ pub mod prelude {
     pub use crate::ui::widgets::settings::*;
     pub use crate::ui::widgets::browser::*;
     pub use crate::ui::widgets::palettebar::*;
+    pub use crate::ui::widgets::switch_button::*;
 }
 
 #[repr(usize)]
@@ -20,15 +21,24 @@ enum WidgetIndices {
     ModeBarIndex,
 }
 
+#[repr(usize)]
+enum ToolBarIndices {
+    EditSwitchIndex,
+}
+
 use WidgetIndices::*;
+use ToolBarIndices::*;
 
 pub use crate::prelude::*;
 
 pub struct UI {
 
     widgets                         : Vec<Box<dyn Widget>>,
+    toolbar_widgets                 : Vec<Box<dyn Widget>>,
 
     toolbar_rect                    : Rect,
+    toolbar_buffer                  : Vec<u8>,
+    toolbar_dirty                   : bool,
 
     pub toolbar_height              : usize,
     pub palettebar_width            : usize,
@@ -39,6 +49,8 @@ pub struct UI {
 impl UI {
 
     pub fn new() -> Self {
+
+        // Widgets
 
         let mut widgets : Vec<Box<dyn Widget>> = vec![];
 
@@ -51,20 +63,25 @@ impl UI {
         let palette: Box<PaletteBar> = Box::new(PaletteBar::new());
         widgets.push(palette);
 
-        // let perspective = Box::new(PerspectiveBar::new());
-        // let property = Box::new(PropertyWidget::new());
+        // Toolbar Widgets
 
-        // widgets.push(modebar);
-        // widgets.push(perspective);
-        // widgets.push(property);
+        let mut toolbar_widgets : Vec<Box<dyn Widget>> = vec![];
+
+        let mut edit_switch = Box::new(SwitchButton::new());
+        edit_switch.set_text_list(vec!["PIXEL".to_string(), "PBR".to_string()]);
+        edit_switch.set_cmd(Command::EditStateSwitched);
+        toolbar_widgets.push(edit_switch);
 
         Self {
             widgets,
+            toolbar_widgets,
 
             toolbar_rect            : Rect::empty(),
+            toolbar_buffer          : vec![],
+            toolbar_dirty           : true,
 
             toolbar_height          : 90,
-            palettebar_width        : 115,
+            palettebar_width        : 162,
             settings_width          : 200,
             browser_height          : 150,
         }
@@ -75,8 +92,38 @@ impl UI {
         // Toolbar
 
         self.toolbar_rect = Rect::new(0, 0, ctx.width, self.toolbar_height);
-        ctx.draw.rect(pixels, &self.toolbar_rect.to_usize(), ctx.width, &context.color_toolbar);
-        ctx.draw.rect(pixels, &(0, 45, ctx.width, 1), ctx.width, &[21, 21, 21, 255]);
+
+        // Draw toolbar in an offscreen buffer on change and blit it
+
+        if self.toolbar_buffer.len() != ctx.width * self.toolbar_height * 4 {
+            self.toolbar_buffer = vec![0;ctx.width * self.toolbar_height * 4];
+            self.toolbar_dirty = true;
+        }
+
+        if self.toolbar_dirty {
+            let frame = &mut self.toolbar_buffer[..];
+
+            //println!("drawing toolbar");
+
+            ctx.draw.rect(frame, &(0, 0, self.toolbar_rect.width as usize, self.toolbar_rect.height as usize), ctx.width, &context.color_toolbar);
+            ctx.draw.rect(frame, &(0, 45, ctx.width, 1), ctx.width, &[21, 21, 21, 255]);
+
+            // --- Icon
+
+            if let Some(logo) = context.icons.get(&"logo_toolbar".to_string()) {
+                ctx.draw.blend_slice(frame, &logo.0, &(4, 2, logo.1 as usize, logo.2 as usize), context.width);
+            }
+
+            self.toolbar_widgets[EditSwitchIndex as usize].set_rect(Rect::new(10, 52, 200, 34));
+
+            for w in &mut self.toolbar_widgets {
+                w.draw(frame, context, world, ctx);
+            }
+
+            self.toolbar_dirty = false;
+        }
+
+        ctx.draw.copy_slice(pixels, &self.toolbar_buffer, &self.toolbar_rect.to_usize(), ctx.width);
 
         // Settings rect
 
@@ -96,12 +143,6 @@ impl UI {
 
         self.widgets[BrowserIndex as usize].set_rect(browser_rect.clone());
 
-        // --- Toolbar Icon
-
-        if let Some(logo) = context.icons.get(&"logo_toolbar".to_string()) {
-            ctx.draw.blend_slice(pixels, &logo.0, &(4, 2, logo.1 as usize, logo.2 as usize), context.width);
-        }
-
         // ---
 
         for w in &mut self.widgets {
@@ -110,6 +151,11 @@ impl UI {
     }
 
     pub fn contains(&mut self, x: f32, y: f32) -> bool {
+
+        if self.toolbar_rect.is_inside((x as usize, y as usize)) {
+            return true;
+        }
+
         for w in &mut self.widgets {
             if w.contains(x, y) {
                 return true;
@@ -119,6 +165,13 @@ impl UI {
     }
 
     pub fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+
+        for w in &mut self.toolbar_widgets {
+            if w.touch_down(x, y, context) {
+                self.toolbar_dirty = true;
+                return true;
+            }
+        }
 
         for w in &mut self.widgets {
             if w.touch_down(x, y, context) {
@@ -156,6 +209,11 @@ impl UI {
         for w in &mut self.widgets {
             w.update(context);
         }
+    }
+
+    /// Returns the edit state
+    pub fn get_edit_state(&self) -> bool {
+        !self.toolbar_widgets[EditSwitchIndex as usize].get_state()
     }
 
 }

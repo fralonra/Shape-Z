@@ -91,9 +91,13 @@ impl TheTrait for Editor {
     fn touch_down(&mut self, x: f32, y: f32, _ctx: &mut TheContext) -> bool {
 
         self.ui_drag = false;
-        if self.ui.touch_down(x, y, &mut self.context) {
-            self.process_cmds();
+
+        if self.ui.contains(x, y) {
             self.ui_drag = true;
+            if self.ui.touch_down(x, y, &mut self.context) {
+                self.process_cmds();
+                return true;
+            }
         } else {
 
             self.click_drag = Some((x, y));
@@ -163,16 +167,18 @@ impl TheTrait for Editor {
 
             return consumed;
         }
-        return false;
+        false
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
     fn touch_dragged(&mut self, x: f32, y: f32, _ctx: &mut TheContext) -> bool {
 
-        if self.ui_drag && self.ui.touch_dragged(x, y, &mut self.context) {
-            self.process_cmds();
-            self.ui_drag = true;
-            true
+        if self.ui_drag {
+            if self.ui.touch_dragged(x, y, &mut self.context) {
+                self.process_cmds();
+                self.ui_drag = true;
+                return true;
+            }
         } else {
 
             if let Some(mut click_drag) = self.click_drag {
@@ -195,9 +201,8 @@ impl TheTrait for Editor {
                 WORLD.lock().unwrap().needs_update = true;
                 return true;
             }
-
-            false
         }
+        false
     }
 
     fn touch_up(&mut self, x: f32, y: f32, _ctx: &mut TheContext) -> bool {
@@ -240,6 +245,10 @@ impl MyEditor for Editor {
                         }
                     }
                 },
+                Command::EditStateSwitched => {
+                    self.context.edit_state = self.ui.get_edit_state();
+                    WORLD.lock().unwrap().needs_update = true;
+                }
                 _ => {}
             }
         }
