@@ -47,7 +47,6 @@ impl HitRecord {
         if self.normal.z < -0.5 {
             self.side = SideEnum::Front;
         }
-        println!("xx {:?}", self.side);
     }
 
     pub fn get_hitpoint(&mut self) -> ScriptVec3f {

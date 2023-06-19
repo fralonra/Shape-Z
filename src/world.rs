@@ -1,4 +1,4 @@
-use crate::{prelude::*, tool::ToolRole};
+use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 use rand::{thread_rng, Rng, rngs::ThreadRng};
 
@@ -85,71 +85,198 @@ impl World {
                     let cam_off = vec2f(rng.gen(), rng.gen());
                     //let cam_off = vec2f(0.5, 0.5);
                     // let ray = self.camera.create_ray(uv, screen, cam_off);
-                    let ray = self.camera.create_orbit_ray(uv, screen, cam_off);
 
-                    let mut color = [0.15, 0.15, 0.15, 1.0];
+                    let mut ray = self.camera.create_orbit_ray(uv, screen, cam_off);
 
-                    if let Some(hit) = self.dda_recursive(&ray) {
-                        //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
-                        color = context.palette.at_f_to_linear(hit.value);
+                    let mut color;
 
-                        // Ambient occlusion
-                        let pos = hit.hitpoint - 0.01 * hit.normal;
+                    if false {
+                        color = [0.15, 0.15, 0.15, 1.0];
 
-                        let z = hit.normal;
-                        let x = normalize(cross(z, vec3f(-0.36, -0.48, 0.8)));
-                        let y = normalize(cross(z, x));
+                        if let Some(mut hit) = self.dda_recursive(&ray) {
+                            //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
+                            color = context.palette.at_f_to_linear(hit.value);
 
-                        // let hash = hash3_2(vec3f(time + 0.2, uv.x, uv.y));
-                        let hash = vec2f(rng.gen(), rng.gen());
-                        let mut a = sqrt(hash.x);
-                        let b = a * cos(6.283185 * hash.y);
-                        let c = a * sin(6.283185 * hash.y);
-                        a = sqrt(1.0 - hash.x);
-                        let shade_dir = b * x + c * y + a * z;
+                            // Ambient occlusion
+                            let pos = hit.hitpoint - 0.01 * hit.normal;
 
-                        let ambient;
-                        if let Some(_) = self.dda_recursive(&Ray::new(pos, shade_dir)) {
-                            ambient = 0.0;
-                        } else {
-                            ambient = 1.0;
+                            let z = hit.normal;
+                            let x = normalize(cross(z, vec3f(-0.36, -0.48, 0.8)));
+                            let y = normalize(cross(z, x));
+
+                            // let hash = hash3_2(vec3f(time + 0.2, uv.x, uv.y));
+                            let hash = vec2f(rng.gen(), rng.gen());
+                            // let hash = vec2f(0.5, 0.5);
+                            let mut a = sqrt(hash.x);
+                            let b = a * cos(6.283185 * hash.y);
+                            let c = a * sin(6.283185 * hash.y);
+                            a = sqrt(1.0 - hash.x);
+                            let shade_dir = b * x + c * y + a * z;
+
+                            let ambient;
+                            if let Some(_) = self.dda_recursive(&Ray::new(pos, shade_dir)) {
+                                ambient = 0.0;
+                            } else {
+                                ambient = 0.4;
+                            }
+
+                            /*
+                            // Sun
+                            let mut z = vec3f(0.48, 0.36, 0.8);
+                            let x = normalize(cross(z, vec3f(0.0, 1.0, 0.0)));
+                            let y = normalize(cross(z, x));
+
+                            // let hash = hash3_2(vec3f(time + 0.3, uv.x, uv.y));
+                            let hash = vec2f(rng.gen(), rng.gen());
+                            //let hash = vec2f(0.5, 0.5);
+                            let a = sqrt(hash.x);
+                            let b = a * cos(6.283185 * hash.y);
+                            let c = a * sin(6.283185 * hash.y);
+                            z += 0.04 * (b * x + c * y);
+
+                            let sun;
+                            if let Some(_) = self.dda_recursive(&Ray::new(pos, normalize(z))) {
+                                sun = 0.0;
+                            } else {
+                                sun = 1.0;
+                            }*/
+
+                            // color[0] *= 0.6 * ambient + 0.4 * sun;
+                            // color[1] *= 0.6 * ambient + 0.4 * sun;
+                            // color[2] *= 0.6 * ambient + 0.4 * sun;
+                            color[0] += ambient;// + 0.4 * sun;
+                            color[1] += ambient;// + 0.4 * sun;
+                            color[2] += ambient;// + 0.4 * sun;
+
+                            // hit.compute_side();
+                            // if hit.side == SideEnum::Top {
+                            //     color[1] += 0.2;
+                            // } else
+                            // if hit.side == SideEnum::Right {
+                            //     color[2] += 0.2;
+                            // }
+
+                            // color[0] *= sun;
+                            // color[1] *= sun;
+                            // color[2] *= sun;
+
+                            // if context.curr_tool_role == ToolRole::Tile && Some(hit.key) == context.curr_key {
+                            //     color = mix_color(&color, &[1.0, 1.0, 1.0, 1.0], 0.2);
+                            // }
+
+                            // Clip color to the palette
+                            let index = context.palette.closest(color[0].powf(0.4545), color[1].powf(0.4545), color[2].powf(0.4545));
+                            color = context.palette.at_f(index);
+                        }
+                    } else {
+
+                        let max_depth = 2;
+
+                        let mut acc = Vec3f::zero();
+                        let mut mask = Vec3f::one();
+
+                        let pi = std::f32::consts::PI;
+                        let mut hit_something = false;
+
+                        for _depth in 0..max_depth {
+
+                            if let Some(hit) = self.dda_recursive(&ray) {
+
+                                hit_something = true;
+
+                                let n = hit.normal;
+                                let nl = n * signum(-dot(n, ray.d));
+
+                                let roughness = 0.7;//1.0 - spheres[id].smoothness * spheres[id].smoothness;
+                                let alpha = roughness * roughness;
+                                let metallic = 1.0;//spheres[id].metallic;
+                                let reflectance = 1.0;//spheres[id].reflectance;
+                                let diffuse = context.palette.at_vec_to_linear(hit.value);//spheres[id].diffuse;
+                                //let specular = 1.0 - diffuse;
+                                let color = diffuse;//spheres[id].albedo * diffuse + spheres[id].ks * specular;
+
+                                let mut brdf = vec3f(0.0, 0.0, 0.0);
+
+                                let light_pos = vec3f(0.0, 6.0, 0.0);
+                                let light_radius = 1.0;
+                                let light_emission = vec3f(200.0, 200.0, 200.0);
+
+                                let voxel_emission = vec3f(0.0, 0.0, 0.0);
+
+                                let x = hit.hitpoint - 0.005 * n;
+
+                                if reflectance == 1.0 || rng.gen::<f32>() < reflectance {
+
+                                    #[inline(always)]
+                                    pub fn mix(a: &f32, b: &f32, v: f32) -> f32 {
+                                        (1.0 - v) * a + b * v
+                                    }
+
+                                    let l0 = light_pos - x;
+                                    let cos_a_max = sqrt(1. - clamp(light_radius * light_radius / dot(l0, l0), 0.0, 1.0));
+                                    let cosa = mix(&cos_a_max, &1.0, rng.gen());
+                                    let l = jitter(l0, 2.0 * pi * rng.gen::<f32>(), sqrt(1.0 - cosa*cosa), cosa);
+
+                                    if let Some(_hit_refl) = self.dda_recursive(&Ray::new(x, l)) {
+
+                                    } else {
+                                        // No hit, we assume we hit it for now
+
+                                        let omega = 2.0 * pi * (1.0 - cos_a_max);
+                                        brdf += (light_emission * clamp(ggx(nl, ray.d, l, roughness, metallic),0.0,1.0) * omega) / pi;
+                                    }
+
+                                    let xsi_1 = rng.gen::<f32>();
+                                    let xsi_2 = rng.gen::<f32>();
+                                    let phi = atan((alpha * sqrt(xsi_1)) / sqrt(1.0 - xsi_1));
+                                    let theta = 2.0 * pi * xsi_2;
+                                    let direction = angle_to_dir(nl, theta, phi);
+                                    ray = Ray::new(x, direction);
+                                    acc += mask * voxel_emission + mask * color * brdf;
+                                    mask *= color;
+                                } else {
+
+                                    #[inline(always)]
+                                    pub fn mix(a: &f32, b: &f32, v: f32) -> f32 {
+                                        (1.0 - v) * a + b * v
+                                    }
+
+                                    let r2 = rng.gen();
+                                    let d = jitter(nl, 2.0 * pi * rng.gen::<f32>(), sqrt(r2), sqrt(1.0 - r2));
+                                    let mut e = Vec3f::zero();
+
+                                    let l0 = light_pos - x;
+
+                                    let cos_a_max = sqrt(1.0 - clamp(light_radius * light_radius / dot(l0, l0), 0., 1.));
+                                    let cosa = mix(&cos_a_max, &1.0, rng.gen());
+                                    let l = jitter(l0, 2.0 * pi * rng.gen::<f32>(), sqrt(1.0 - cosa * cosa), cosa);
+
+                                    if let Some(_hit_refl) = self.dda_recursive(&Ray::new(x, l)) {
+
+                                    } else {
+                                        // No hit, we assume we hit it for now
+
+                                        let omega = 2.0 * pi * (1.0 - cos_a_max);
+                                        e += (light_emission * clamp(dot(l, n),0.0,1.0) * omega) / pi;
+                                    }
+
+                                    acc += mask * voxel_emission + mask * color * e;
+                                    mask *= color;
+                                    ray = Ray::new(x, d);
+                                }
+                            } else {
+                                acc += mask * vec3f(0.15, 0.15, 0.15);
+                                break;
+                            }
                         }
 
-                        // Sun
-                        let mut z = vec3f(0.48, 0.36, 0.8);
-                        let x = normalize(cross(z, vec3f(0.0, 1.0, 0.0)));
-                        let y = normalize(cross(z, x));
+                        color = [acc.x, acc.y, acc.z, 1.0];
 
-                        // let hash = hash3_2(vec3f(time + 0.3, uv.x, uv.y));
-                        let hash = vec2f(rng.gen(), rng.gen());
-                        //let hash = vec2f(0.5, 0.5);
-                        let a = sqrt(hash.x);
-                        let b = a * cos(6.283185 * hash.y);
-                        let c = a * sin(6.283185 * hash.y);
-                        z += 0.04 * (b * x + c * y);
-
-                        let sun;
-                        if let Some(_) = self.dda_recursive(&Ray::new(pos, normalize(z))) {
-                            sun = 0.0;
-                        } else {
-                            sun = 1.0;
+                        if hit_something {
+                            // Clip color to the palette
+                            let index = context.palette.closest(color[0].powf(0.4545), color[1].powf(0.4545), color[2].powf(0.4545));
+                            color = context.palette.at_f(index);
                         }
-
-                        color[0] *= 0.6 * ambient + 0.4 * sun;
-                        color[1] *= 0.6 * ambient + 0.4 * sun;
-                        color[2] *= 0.6 * ambient + 0.4 * sun;
-
-                        // color[0] *= sun;
-                        // color[1] *= sun;
-                        // color[2] *= sun;
-
-                        if context.curr_tool_role == ToolRole::Tile && Some(hit.key) == context.curr_key {
-                            color = mix_color(&color, &[1.0, 1.0, 1.0, 1.0], 0.2);
-                        }
-
-                        // Clip color to the palette
-                        let index = context.palette.closest(color[0].powf(0.4545), color[1].powf(0.4545), color[2].powf(0.4545));
-                        color = context.palette.at_f(index);
                     }
 
                     // Accumulate
@@ -287,7 +414,7 @@ impl World {
                 let mut lro = ray.at(dist);
                 lro -= Vec3f::from(key);
                 lro *= tile.size as f32;
-                //lro = lro - rd * 1.0;
+                lro = lro - rd * 0.01;
 
                 if let Some(mut hit) = tile.dda(&Ray::new(lro, rd)) {
                     hit.key = key;

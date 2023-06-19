@@ -94,7 +94,6 @@ impl Tile {
         self.data = new_data;
     }
 
-
     pub fn render(&mut self, buffer: &mut ColorBuffer) {
 
         let width = buffer.width;
@@ -223,8 +222,6 @@ impl Tile {
         let mut key = Vec3i::zero();
         let mut value : u8 = 0;
 
-        // let bounds_distance = (self.size as f32 - ro) * rdi;
-
         let max_steps = (self.size as f32 * 3.0).ceil() as i32;
 
         for _ii in 0..max_steps {
@@ -238,10 +235,6 @@ impl Tile {
 
             let plain = (1.0 + srd - 2.0 * (ro - i)) * rdi;
             dist = min(plain.x, min(plain.y, plain.z));
-
-            // if dist > bounds_distance.x && dist > bounds_distance.y && dist > bounds_distance.z {
-            //     break;
-            // }
 
             normal = equal(dist, plain) * srd;
             i += normal;

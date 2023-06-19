@@ -1,3 +1,5 @@
+use maths_rs::Vec3f;
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Palette {
 
@@ -79,6 +81,21 @@ impl Palette {
     /// Get the f32 based color at the given index
     pub fn at_f(&self, index: u8) -> [f32; 4] {
         self.colors_f[index as usize]
+    }
+
+    /// Get the f32 based color at the given index
+    pub fn at_vec(&self, index: u8) -> Vec3f {
+        let c = self.colors_f[index as usize];
+        Vec3f::new(c[0], c[1], c[2])
+    }
+
+    /// Get the f32 based color at the given index
+    pub fn at_vec_to_linear(&self, index: u8) -> Vec3f {
+        let mut c = self.colors_f[index as usize];
+        c[0] = c[0].powf(2.2);
+        c[1] = c[1].powf(2.2);
+        c[2] = c[2].powf(2.2);
+        Vec3f::new(c[0], c[1], c[2])
     }
 
     /// Get the f32 based color at the given index and convrts it to linear space

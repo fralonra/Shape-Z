@@ -47,7 +47,7 @@ impl TheTrait for Editor {
             ui_drag     : false,
 
             path_iter   : 0,
-            path_max    : 100,
+            path_max    : 300,
         }
     }
 
