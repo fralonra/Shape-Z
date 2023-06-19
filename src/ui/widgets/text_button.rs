@@ -47,17 +47,16 @@ impl Widget for TextButton {
         self.state
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
 
-        /*
         let color: [u8; 4] = if !self.clicked && !self.state { context.color_selected } else { context.color_button };
 
         let r = self.rect.to_usize();
-        context.draw2d.draw_rounded_rect(pixels, &r, context.width, &color, &(6.0, 6.0, 6.0, 6.0));
+        ctx.draw.rounded_rect(pixels, &r, context.width, &color, &(6.0, 6.0, 6.0, 6.0));
 
         if let Some(font) = &context.font {
-            context.draw2d.blend_text_rect(pixels, &r, context.width, &font, 16.0, &self.text, &context.color_text, crate::ui::draw2d::TextAlignment::Center)
-        }*/
+            ctx.draw.blend_text_rect(pixels, &r, context.width, &font, 16.0, &self.text, &context.color_text, theframework::thedraw2d::TheTextAlignment::Center)
+        }
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {

@@ -23,7 +23,7 @@ impl Widget for PaletteBar {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
 
         let r: (usize, usize, usize, usize) = self.rect.to_usize();
 

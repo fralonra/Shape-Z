@@ -4,12 +4,6 @@ use crate::prelude::*;
 pub struct Settings {
     rect                        : Rect,
 
-    voxels_r                    : Rect,
-    palette_r                   : Rect,
-
-    cam_orbit_drag              : Option<(f32, f32, f32, f32)>,
-
-    buffer                      : ColorBuffer,
     widgets                     : Vec<Box<dyn Widget>>,
 
     pub tile_needs_update       : bool,
@@ -18,7 +12,7 @@ pub struct Settings {
 impl Widget for Settings {
 
     fn new() -> Self {
-        let mut widgets : Vec<Box<dyn Widget>> = vec![];
+        let widgets : Vec<Box<dyn Widget>> = vec![];
 
         /*
         let mut clear_button = Box::new(TextButton::new());
@@ -61,13 +55,6 @@ impl Widget for Settings {
         Self {
             rect                : Rect::empty(),
 
-            voxels_r            : Rect::empty(),
-            palette_r           : Rect::empty(),
-
-            cam_orbit_drag      : None,
-
-            buffer              : ColorBuffer::new(280, 280),
-
             widgets,
 
             tile_needs_update   : false,
@@ -84,7 +71,7 @@ impl Widget for Settings {
         ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
         ctx.draw.rect(pixels, &(r.0, r.1, r.2, 2), ctx.width, &[0, 0, 0, 255]);
 
-        let mut x =  r.0 + 15;
+        let x =  r.0 + 15;
         let mut y =  r.1 + 10;
 
         for v in &context.curr_tool.widget_values {
@@ -235,7 +222,7 @@ impl Widget for Settings {
 
     }
 
-    fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_dragged(&mut self, x: f32, y: f32, _context: &mut Context) -> bool {
 
         if self.rect.is_inside((x as usize, y as usize)) {
 

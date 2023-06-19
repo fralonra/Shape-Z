@@ -2,14 +2,13 @@
 fn init() {
 
     this.name = "Remove";
-
+    this.role = "Voxel";
 }
 
 fn apply(key) {
 
     let tile = get_tile(key);
     tile.set(vec3i(5, 5, 5), 10);
-    print(tile.size);
     set_tile(key, tile);
 }
 

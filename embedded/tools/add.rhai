@@ -2,6 +2,7 @@
 fn init() {
 
     this.name = "Add";
+    this.role = "Voxel";
 
     this.parameters = [
         color("Color", 20)

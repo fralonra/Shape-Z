@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+use core::f32;
 use std::f32::consts::PI;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -28,6 +29,17 @@ pub struct Camera {
     pub origin      : Vec3f,
     pub center      : Vec3f,
     pub fov         : f32,
+
+    // For orbit
+
+    pub distance    : f32,
+
+    pub forward     : Vec3f,
+    pub up          : Vec3f,
+    pub right       : Vec3f,
+
+    pub orbit_x     : f32,
+    pub orbit_y     : f32,
 }
 
 impl Camera {
@@ -36,7 +48,16 @@ impl Camera {
         Self {
             origin,
             center,
-            fov
+            fov,
+
+            distance    : 2.0,
+
+            forward     : Vec3f::new(0.0, 0.0, -1.0),
+            up          : Vec3f::new(0.0, 1.0, 0.0),
+            right       : Vec3f::new(1.0, 0.0, 0.0),
+
+            orbit_x     : 0.0,
+            orbit_y     : -90.0,
         }
     }
 
@@ -144,112 +165,56 @@ impl Camera {
         Ray::new(self.origin, normalize(dir))
     }
 
-    pub fn create_ray_persp(&self, uv: Vec2f, screen: Vec2f, offset: Vec2f) -> Ray {
-        let ratio = screen.x / screen.y;
+    /// Computes the orbi camera vectors. Based on https://www.shadertoy.com/view/ttfyzN
+    pub fn comput_orbit(&mut self, mouse_delta: Vec2f) {
 
-        /*
-        let up_vector = vec3f(0.0, 1.0, 0.0);
-        let w = normalize(self.origin - self.center);
-        let u = cross(up_vector, w);
-        let v = cross(w, u);
-
-        let ortho_width = self.fov * ratio;
-        let ortho_height = self.fov;
-
-        let pixel_size = vec2f(ortho_width / screen.x, ortho_height / screen.y);
-
-        let lower_left = self.center - u * (ortho_width * 0.5) - v * (ortho_height * 0.5);
-        let mut dir = lower_left - self.origin;
-
-        dir += u * (pixel_size.x * offset.x + uv.x);
-        dir += v * (pixel_size.y * offset.y + uv.y);*/
-
-        let pixel_size = vec2f(1.0 / screen.x, 1.0 / screen.y);
-
-        let half_width = (self.fov.to_radians() * 0.5).tan();
-        let half_height = half_width / ratio;
-
-        let up_vector = vec3f(0.0, 1.0, 0.0);
-
-        let w = normalize(self.origin - self.center);
-        let u = cross(up_vector, w);
-        let v = cross(w, u);
-
-        let lower_left = self.origin - u * half_width - v * half_height - w;
-        let horizontal = u * half_width * 1.72;
-        let vertical = v * half_height * 2.0;
-        //let mut dir = lower_left - self.origin;
-
-        //dir += horizontal * (pixel_size.x * offset.x + uv.x);
-        // dir += vertical * (pixel_size.y * offset.y + uv.y);
-
-        let mut origin = self.origin;
-        origin += horizontal * (pixel_size.x * offset.x + uv.x);
-        origin += vertical * (pixel_size.y * offset.y + uv.y);
-
-        Ray::new(origin, normalize(-w))
-    }
-}
-
-
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
-pub struct OrbitCamera {
-    pub origin          : Vec3f,
-    pub center          : Vec3f,
-    pub fov             : f32,
-
-    pub azimuth         : f32,
-    pub elevation       : f32,
-}
-
-impl OrbitCamera {
-
-    pub fn new() -> Self {
-        Self {
-            origin      : Vec3f::zero(),
-            center      : Vec3f::zero(),
-            fov         : 45.0,
-
-            azimuth     : 0.0,
-            elevation   : 0.0,
+        #[inline(always)]
+        pub fn mix(a: &f32, b: &f32, v: f32) -> f32 {
+            (1.0 - v) * a + b * v
         }
+
+        let min_camera_angle = 0.01;
+        let max_camera_angle = std::f32::consts::PI - 0.01;
+
+        self.orbit_x += mouse_delta.x;
+        self.orbit_y += mouse_delta.y;
+
+        let angle_x = -self.orbit_x;
+        let angle_y = mix(&min_camera_angle, &max_camera_angle, self.orbit_y);
+
+        let mut camera_pos = Vec3f::zero();
+
+        camera_pos.x = sin(angle_x) * sin(angle_y) * self.distance;
+        camera_pos.y = -cos(angle_y) * self.distance;
+        camera_pos.z = cos(angle_x) * sin(angle_y) * self.distance;
+
+        camera_pos += self.center;
+
+        self.origin = camera_pos;
+        self.forward = normalize(self.center - camera_pos);
+        self.right = normalize(cross(vec3f(0.0, 1.0, 0.0), -self.forward));
+        self.up = normalize(cross(-self.forward, self.right));
+
     }
 
-    pub fn update(&mut self) {
+    /// Create an orbit camera ray
+    pub fn create_orbit_ray(&self, uv: Vec2f, screen_dim: Vec2f, offset: Vec2f) -> Ray {
 
-        let radius = length(self.origin - self.center);
+        let camera_pos = self.origin;
+        let camera_fwd = self.forward;
+        let camera_up = self.up;
+        let camera_right = self.right;
 
-        let new_origin = vec3f(
-            radius * self.elevation.to_radians().cos() * self.azimuth.to_radians().sin(),
-            radius * self.elevation.to_radians().sin(),
-            radius * self.elevation.to_radians().cos() * self.azimuth.to_radians().cos()
-        );
+        let uv_jittered= (uv * screen_dim + (offset - 0.5)) / screen_dim;
+        let mut screen = uv_jittered * 2.0 - 1.0;
 
-        self.origin = self.center + new_origin;
-    }
+        let aspect_ratio = screen_dim.x / screen_dim.y;
+        screen.y /= aspect_ratio;
 
-    /// Create a pinhole ray
-    pub fn create_ray(&self, uv: Vec2f, screen: Vec2f, offset: Vec2f) -> Ray {
-        let ratio = screen.x / screen.y;
-        let pixel_size = vec2f(1.0 / screen.x, 1.0 / screen.y);
+        let camera_distance = tan(self.fov * 0.5 * std::f32::consts::PI / 180.0);
+        let mut ray_dir = vec3f(screen.x, screen.y, camera_distance);
+        ray_dir = normalize(Mat3f::from((camera_right, camera_up, camera_fwd)) * ray_dir);
 
-        let half_width = (self.fov.to_radians() * 0.5).tan();
-        let half_height = half_width / ratio;
-
-        let up_vector = vec3f(0.0, 1.0, 0.0);
-
-        let w = normalize(self.origin - self.center);
-        let u = cross(up_vector, w);
-        let v = cross(w, u);
-
-        let lower_left = self.origin - u * half_width - v * half_height - w;
-        let horizontal = u * half_width * 2.0;
-        let vertical = v * half_height * 2.0;
-        let mut dir = lower_left - self.origin;
-
-        dir += horizontal * (pixel_size.x * offset.x + uv.x);
-        dir += vertical * (pixel_size.y * offset.y + uv.y);
-
-        Ray::new(self.origin, normalize(dir))
+        Ray::new(camera_pos, ray_dir)
     }
 }

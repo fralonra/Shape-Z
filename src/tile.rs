@@ -4,7 +4,7 @@ use rhai::{ Engine };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Tile {
-    pub camera              : OrbitCamera,
+    pub camera              : Camera,
     pub size                : usize,
 
     pub data                : Vec<Option<u8>>,
@@ -13,7 +13,7 @@ pub struct Tile {
 impl Tile {
     pub fn new(size: usize) -> Self {
 
-        let mut camera = OrbitCamera::new();
+        let mut camera = Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0);
 
         let m = (size / 2) as f32 + 0.5;
 
@@ -28,7 +28,7 @@ impl Tile {
             for y in 0..size {
                 let index = 0 + y * size + z * size * size;
 
-                data[index] = Some(64);
+                data[index] = Some(20);
             }
         }
 
@@ -37,7 +37,7 @@ impl Tile {
             for z in 0..size {
                 let index = x + z * size * size;
 
-                data[index] = Some(64);
+                data[index] = Some(20);
             }
         }
 
@@ -101,7 +101,6 @@ impl Tile {
         let height = buffer.height as f32;
 
         let screen = vec2f(buffer.width as f32, buffer.height as f32);
-        self.camera.update();
 
         buffer.pixels
             .par_rchunks_exact_mut(width * 4)
@@ -226,7 +225,7 @@ impl Tile {
 
         // let bounds_distance = (self.size as f32 - ro) * rdi;
 
-        let max_steps = (self.size as f32 * 2.4).ceil() as i32;
+        let max_steps = (self.size as f32 * 3.0).ceil() as i32;
 
         for _ii in 0..max_steps {
 

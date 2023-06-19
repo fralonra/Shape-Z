@@ -4,7 +4,6 @@ use crate::prelude::*;
 pub struct ColorWidget {
     rect                : Rect,
 
-    id                  : String,
     text                : String,
 
     cmd                 : Option<Command>,
@@ -18,7 +17,6 @@ impl Widget for ColorWidget {
 
         Self {
             rect        : Rect::empty(),
-            id          : "".to_string(),
             text        : "".to_string(),
             cmd         : None,
             clicked     : false,
@@ -37,7 +35,7 @@ impl Widget for ColorWidget {
         self.cmd = Some(cmd);
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
+    fn draw(&mut self, _pixels: &mut [u8], _context: &mut Context, _world: &World, _ctx: &TheContext) {
 
         /*
         let color: [u8; 4] = if !self.clicked && !self.state { context.color_selected } else { context.color_button };

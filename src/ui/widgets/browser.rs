@@ -1,5 +1,5 @@
 
-use crate::prelude::*;
+use crate::{prelude::*, tool::ToolRole};
 
 pub struct Browser {
     rect                : Rect,
@@ -28,7 +28,7 @@ impl Widget for Browser {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
 
         let mut r = self.rect.to_usize();
         ctx.draw.rect(pixels, &r, context.width, &context.color_widget);
@@ -51,9 +51,16 @@ impl Widget for Browser {
         self.content_rects = vec![];
         for tool_name in &context.curr_tools {
 
-            let color = &context.color_green;
+            let mut color = &context.color_green;
             let mut border_color = &context.color_green;
             let ro = 0.0;
+
+            if let Some(tool) = context.tools.get(tool_name) {
+                if tool.role() == ToolRole::Tile {
+                    color = &context.color_blue;
+                    border_color = &context.color_blue;
+                }
+            }
 
             if curr_name == *tool_name {
                 border_color = &context.color_white;
@@ -90,6 +97,7 @@ impl Widget for Browser {
                 if r.is_inside((x as usize, y as usize)) {
                     if let Some(tool) = context.tools.get(&context.curr_tools[index]) {
                         context.curr_tool = tool.clone();
+                        context.curr_tool_role = tool.role();
                         return true;
                     }
                 }

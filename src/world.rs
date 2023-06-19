@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, tool::ToolRole};
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 use rand::{thread_rng, Rng, rngs::ThreadRng};
 
@@ -17,12 +17,15 @@ impl World {
 
         let mut tiles  = FxHashMap::default();
 
+        // let camera = Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0);
+        let camera = Camera::new(vec3f(0.0, 2.0, 2.0), Vec3f::new(0.0, 1.0, 0.0), 45.0);
+
         tiles.insert((-1, 0, 0), Tile::new(9));
         tiles.insert((0, 0, 0), Tile::new(9));
         tiles.insert((1, 0, 0), Tile::new(9));
 
         Self {
-            camera          : Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0),
+            camera,
 
             tiles,
             needs_update    : true,
@@ -52,8 +55,7 @@ impl World {
 
         let screen = vec2f(buffer.width as f32, buffer.height as f32);
 
-        let time = (iteration as f32 * 1000.0 / 60.0) / 1000.0;
-
+        //let time = (iteration as f32 * 1000.0 / 60.0) / 1000.0;
         let start = self.get_time();
 
         buffer.pixels
@@ -61,6 +63,15 @@ impl World {
             .enumerate()
             .for_each(|(j, line)| {
                 for (i, pixel) in line.chunks_exact_mut(4).enumerate() {
+
+                    #[inline(always)]
+                    pub fn mix_color(a: &[f32], b: &[f32], v: f32) -> [f32; 4] {
+                        [   (1.0 - v) * a[0] + b[0] * v,
+                            (1.0 - v) * a[1] + b[1] * v,
+                            (1.0 - v) * a[2] + b[2] * v,
+                            (1.0 - v) * a[3] + b[3] * v ]
+                    }
+
                     let i = j * width + i;
 
                     let x = (i % width) as f32;
@@ -73,9 +84,10 @@ impl World {
                     // let cam_off = hash3_2(vec3f(time, uv.x, uv.y));
                     let cam_off = vec2f(rng.gen(), rng.gen());
                     //let cam_off = vec2f(0.5, 0.5);
-                    let ray = self.camera.create_ray(uv, screen, cam_off);
+                    // let ray = self.camera.create_ray(uv, screen, cam_off);
+                    let ray = self.camera.create_orbit_ray(uv, screen, cam_off);
 
-                    let mut color = [uv.x, uv.y, 0.0, 1.0];
+                    let mut color = [0.15, 0.15, 0.15, 1.0];
 
                     if let Some(hit) = self.dda_recursive(&ray) {
                         //color = [hit.normal.x.abs(), hit.normal.y.abs(), hit.normal.z.abs(), 1.0];
@@ -127,17 +139,17 @@ impl World {
                         color[1] *= 0.6 * ambient + 0.4 * sun;
                         color[2] *= 0.6 * ambient + 0.4 * sun;
 
-                        // Clip color to the palette
-                        let index = context.palette.closest(color[0], color[1], color[2]);
-                        color = context.palette.at_f(index);
-                    }
+                        // color[0] *= sun;
+                        // color[1] *= sun;
+                        // color[2] *= sun;
 
-                    #[inline(always)]
-                    pub fn mix_color(a: &[f32], b: &[f32], v: f32) -> [f32; 4] {
-                        [   (1.0 - v) * a[0] + b[0] * v,
-                            (1.0 - v) * a[1] + b[1] * v,
-                            (1.0 - v) * a[2] + b[2] * v,
-                            (1.0 - v) * a[3] + b[3] * v ]
+                        if context.curr_tool_role == ToolRole::Tile && Some(hit.key) == context.curr_key {
+                            color = mix_color(&color, &[1.0, 1.0, 1.0, 1.0], 0.2);
+                        }
+
+                        // Clip color to the palette
+                        let index = context.palette.closest(color[0].powf(0.4545), color[1].powf(0.4545), color[2].powf(0.4545));
+                        color = context.palette.at_f(index);
                     }
 
                     // Accumulate
@@ -147,7 +159,7 @@ impl World {
         });
 
         let stop = self.get_time();
-        println!("tick time {:?}", stop - start);
+        println!("renter time {:?}, iter: {}", stop - start, iteration);
 
     }
 
@@ -160,7 +172,7 @@ impl World {
 
         let uv = vec2f(x, 1.0 - y);
 
-        let ray = self.camera.create_ray(uv, screen, vec2f(0.5, 0.5));
+        let ray = self.camera.create_orbit_ray(uv, screen, vec2f(0.5, 0.5));
 
         if let Some(hit) = self.dda_recursive(&ray) {
             Some(hit)
@@ -169,7 +181,7 @@ impl World {
         }
     }
 
-    fn dda(&self, ray: &Ray) -> Option<HitRecord> {
+    fn _dda(&self, ray: &Ray) -> Option<HitRecord> {
 
         // Based on https://www.shadertoy.com/view/ct33Rn
 

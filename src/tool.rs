@@ -2,6 +2,12 @@ use crate::prelude::*;
 
 use rhai::{ Engine, Scope, AST, Dynamic, Map };
 
+#[derive(PartialEq, Clone)]
+pub enum ToolRole {
+    Voxel,
+    Tile,
+}
+
 #[derive(Clone)]
 pub struct Tool {
     pub script                  : String,
@@ -98,6 +104,19 @@ impl Tool {
             name
         } else {
             "".into()
+        }
+    }
+
+    /// Returns the role of the tool
+    pub fn role(&self) -> ToolRole {
+        if let Some(name) = self.get_string("role") {
+            if name.to_lowercase() == "tile" {
+                ToolRole::Tile
+            } else {
+                ToolRole::Voxel
+            }
+        } else {
+            ToolRole::Voxel
         }
     }
 

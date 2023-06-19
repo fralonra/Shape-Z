@@ -11,7 +11,6 @@ lazy_static! {
 
 #[derive(PartialEq, Debug, Clone)]
 enum EditorMode {
-    CameraPan,
 }
 
 pub struct Editor {
@@ -31,6 +30,11 @@ pub struct Editor {
 
 impl TheTrait for Editor {
     fn new() -> Self where Self: Sized {
+
+        WORLD.lock().unwrap().camera.center.x = 0.5;
+        WORLD.lock().unwrap().camera.center.y = 0.5;
+        WORLD.lock().unwrap().camera.comput_orbit(Vec2f::zero());
+
         Self {
 
             ui          : UI::new(),
@@ -84,7 +88,7 @@ impl TheTrait for Editor {
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, _ctx: &mut TheContext) -> bool {
 
         self.ui_drag = false;
         if self.ui.touch_down(x, y, &mut self.context) {
@@ -144,18 +148,26 @@ impl TheTrait for Editor {
             let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer);
 
             if let Some(mut hit) = hit {
+                self.context.curr_key = Some(hit.key);
                 hit.compute_side();
                 WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
                 self.context.curr_tool.hit(&self.context.engine, hit);
                 consumed = true;
+            } else {
+                if self.context.curr_key.is_some() {
+                    self.context.curr_key = None;
+                    WORLD.lock().unwrap().needs_update = true;
+                    consumed = true;
+                }
             }
+
+            return consumed;
         }
-        return true;
+        return false;
     }
 
-
     /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+    fn touch_dragged(&mut self, x: f32, y: f32, _ctx: &mut TheContext) -> bool {
 
         if self.ui_drag && self.ui.touch_dragged(x, y, &mut self.context) {
             self.process_cmds();
@@ -165,16 +177,21 @@ impl TheTrait for Editor {
 
             if let Some(mut click_drag) = self.click_drag {
 
-                let xx = (click_drag.0 - x) / 100.0;
-                let yy = (y - click_drag.1) / 100.0;
+                let xx = (x - click_drag.0) / 200.0;
+                let yy = (y - click_drag.1) / 400.0;
+
+                //let xx = x - self.ui.palettebar_width as f32;
+                //let yy = y - self.ui.toolbar_height as f32;
 
                 click_drag.0 = x;
                 click_drag.1 = y;
                 self.click_drag = Some(click_drag);
 
-                //self.world.camera.set_top_down_angle(10.0, 10.0, vec3f(0.0, 0.0, 5.0));
+                WORLD.lock().unwrap().camera.comput_orbit(vec2f(xx, yy));
 
-                WORLD.lock().unwrap().camera.move_by(xx, yy);
+                //WORLD.lock().unwrap().camera.set_top_down_angle(10.0, 2.0, vec3f(0.0, 0.0, 0.0));
+
+                //WORLD.lock().unwrap().camera.rotate(xx, 0.0);
                 WORLD.lock().unwrap().needs_update = true;
                 return true;
             }
@@ -183,7 +200,7 @@ impl TheTrait for Editor {
         }
     }
 
-    fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+    fn touch_up(&mut self, x: f32, y: f32, _ctx: &mut TheContext) -> bool {
         self.ui_drag = false;
 
         if self.ui.touch_up(x, y, &mut self.context) {
@@ -194,7 +211,7 @@ impl TheTrait for Editor {
         }
     }
 
-    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+    fn needs_update(&mut self, _ctx: &mut TheContext) -> bool {
         if self.path_iter < self.path_max {
             true
         } else {
@@ -217,7 +234,7 @@ impl MyEditor for Editor {
                 Command::ColorIndexChanged(index) => {
                     for (w_index, v) in self.context.curr_tool.widget_values.clone().iter().enumerate() {
                         match v {
-                            WidgetValue::Color(name, i) => {
+                            WidgetValue::Color(name, _i) => {
                                 self.context.curr_tool.widget_values[w_index] = WidgetValue::Color(name.clone(), *index);
                             }
                         }

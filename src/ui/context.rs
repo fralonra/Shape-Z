@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, tool::ToolRole};
 use fontdue::Font;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -30,6 +30,7 @@ pub struct Context {
     pub curr_key                : Option<Vec3i>,
 
     pub curr_tool               : Tool,
+    pub curr_tool_role          : ToolRole,
     pub curr_tools              : Vec<String>,
 
     pub cmd                     : Option<Command>,
@@ -115,7 +116,9 @@ impl Context {
                         let name = tool.name();
                         //println!("{}", name);
 
-                        curr_tool = tool.clone();
+                        if name == "Add" {
+                            curr_tool = tool.clone();
+                        }
 
                         curr_tools.push(name.clone());
                         tools.insert(name, tool);
@@ -185,6 +188,8 @@ impl Context {
             color_black         : [0, 0, 0, 255],
 
             curr_tile           : Tile::new(9),
+            curr_tool_role      : ToolRole::Voxel,
+
             curr_key            : None,
 
             curr_tool,

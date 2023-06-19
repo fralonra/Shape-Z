@@ -97,15 +97,15 @@ impl Palette {
 
         for i in 0..self.colors_f.len() {
 
-            let dd =
-                ((r - self.colors_f[i][0]) * 0.30).powf(2.0) +
-                ((g - self.colors_f[i][1]) * 0.59).powf(2.0) +
-                ((b - self.colors_f[i][2]) * 0.11).powf(2.0);
-
             // let dd =
-            //     ((r - self.colors_f[i][0]) * 1.0).powf(2.0) +
-            //     ((g - self.colors_f[i][1]) * 1.0).powf(2.0) +
-            //     ((b - self.colors_f[i][2]) * 1.0).powf(2.0);
+            //     ((r - self.colors_f[i][0]) * 0.30).powf(2.0) +
+            //     ((g - self.colors_f[i][1]) * 0.59).powf(2.0) +
+            //     ((b - self.colors_f[i][2]) * 0.11).powf(2.0);
+
+            let dd =
+                ((r - self.colors_f[i][0]) * 1.0).powf(2.0) +
+                ((g - self.colors_f[i][1]) * 1.0).powf(2.0) +
+                ((b - self.colors_f[i][2]) * 1.0).powf(2.0);
 
             if dd < d {
                 d = dd;
