@@ -6,6 +6,7 @@ use rhai::{ Engine, Scope, AST, Dynamic, Map };
 pub enum ToolRole {
     Voxel,
     Tile,
+    Procedural,
 }
 
 #[derive(Clone)]
@@ -115,7 +116,11 @@ impl Tool {
         if let Some(name) = self.get_string("role") {
             if name.to_lowercase() == "tile" {
                 ToolRole::Tile
-            } else {
+            } else
+            if name.to_lowercase() == "procedural" {
+                ToolRole::Procedural
+            }
+            else {
                 ToolRole::Voxel
             }
         } else {

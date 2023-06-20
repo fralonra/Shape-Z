@@ -49,7 +49,7 @@ impl Widget for TextButton {
 
     fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
 
-        let color: [u8; 4] = if !self.clicked && !self.state { context.color_selected } else { context.color_button };
+        let color: [u8; 4] = if self.clicked || self.state { context.color_selected } else { context.color_button };
 
         let r = self.rect.to_usize();
         ctx.draw.rounded_rect(pixels, &r, context.width, &color, &(6.0, 6.0, 6.0, 6.0));
@@ -67,7 +67,7 @@ impl Widget for TextButton {
         }
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
 
         if self.rect.is_inside((x as usize, y as usize)) {
             context.cmd = self.cmd.clone();

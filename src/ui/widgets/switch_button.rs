@@ -83,7 +83,7 @@ impl Widget for SwitchButton {
         }
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
 
         if self.rect.is_inside((x as usize, y as usize)) {
             context.cmd = self.cmd.clone();

@@ -7,6 +7,7 @@ pub enum Command {
     ColorIndexChanged(u8),
     MaterialIndexChanged(u8),
     EditStateSwitched,
+    TileSelected(i32, i32, i32),
 }
 
 pub struct Context {
@@ -50,9 +51,10 @@ pub struct Context {
     pub engine                  : rhai::Engine,
     pub tools                   : FxHashMap<String, Tool>,
 
-    pub curr_color_index        : u8,
-    pub curr_material_index     : u8
+    // Current Color & Material
 
+    pub curr_color_index        : u8,
+    pub curr_material_index     : u8,
 }
 
 impl Context {
@@ -106,7 +108,7 @@ impl Context {
 
                         tool.init(&mut engine, name);
                         let name = tool.name();
-                        //println!("{}", name);
+                        // println!("{}", name);
 
                         if name == "Add" {
                             curr_tool = tool.clone();
@@ -136,9 +138,9 @@ impl Context {
                 material.metallic = if metallic == 14 { 1.0 } else { (1.0 / 15.0) * metallic as f32 };
                 material.roughness = if roughness == 14 { 1.0 } else { (1.0 / 15.0) * roughness as f32 };
 
-                if metallic > 5 {
-                    material.emission = vec3f(2.0, 2.0, 2.0);
-                }
+                // if metallic > 5 {
+                //     material.emission = vec3f(2.0, 2.0, 2.0);
+                // }
 
                 //println!("{} {}", material.roughness, material.metallic);
 

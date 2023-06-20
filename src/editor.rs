@@ -94,7 +94,7 @@ impl TheTrait for Editor {
 
         if self.ui.contains(x, y) {
             self.ui_drag = true;
-            if self.ui.touch_down(x, y, &mut self.context) {
+            if self.ui.touch_down(x, y, &mut self.context, &WORLD.lock().unwrap()) {
                 self.process_cmds();
                 return true;
             }
@@ -261,7 +261,11 @@ impl MyEditor for Editor {
                 Command::EditStateSwitched => {
                     self.context.edit_state = self.ui.get_edit_state();
                     WORLD.lock().unwrap().needs_update = true;
-                }
+                },
+                Command::TileSelected(x, y, z) => {
+                    self.context.curr_key = Some(vec3i(*x, *y, *z));
+                    WORLD.lock().unwrap().set_focus(vec3i(*x, *y, *z));
+                },
                 _ => {}
             }
         }

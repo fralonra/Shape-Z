@@ -20,9 +20,9 @@ impl World {
         // let camera = Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0);
         let camera = Camera::new(vec3f(0.0, 2.0, 2.0), Vec3f::new(0.0, 1.0, 0.0), 45.0);
 
-        tiles.insert((-1, 0, 0), Tile::new(9));
-        tiles.insert((0, 0, 0), Tile::new(9));
-        tiles.insert((1, 0, 0), Tile::new(9));
+        tiles.insert((-1, 0, 0), Tile::new(24));
+        tiles.insert((0, 0, 0), Tile::new(24));
+        tiles.insert((1, 0, 0), Tile::new(24));
 
         Self {
             camera,
@@ -46,6 +46,14 @@ impl World {
     /// Set a tile
     pub fn set_tile(&mut self, at: Vec3i, tile: Tile) {
         self.tiles.insert((at.x, at.y, at.z), tile);
+    }
+
+    /// Set the tile we are looking at
+    pub fn set_focus(&mut self, at: Vec3i) {
+        self.camera.center.x = at.x as f32 + 0.5;
+        self.camera.center.y = at.y as f32 + 0.5;
+        self.camera.comput_orbit(vec2f(0.0, 0.0));
+        self.needs_update = true;
     }
 
     pub fn render(&self, buffer: &mut ColorBuffer, context: &Context, iteration: i32) {
@@ -170,7 +178,7 @@ impl World {
                         }
                     } else {
 
-                        let max_depth = 4;
+                        let max_depth = 2;
 
                         let mut acc = Vec3f::zero();
                         let mut mask = Vec3f::one();
@@ -288,7 +296,7 @@ impl World {
         });
 
         let _stop = self.get_time();
-        println!("renter time {:?}, iter: {}", _stop - _start, iteration);
+        //println!("renter time {:?}, iter: {}", _stop - _start, iteration);
 
     }
 

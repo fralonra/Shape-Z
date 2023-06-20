@@ -16,6 +16,7 @@ pub mod script;
 pub mod hashes;
 pub mod pbr_path;
 pub mod material;
+pub mod material_preview;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -53,6 +54,7 @@ pub mod prelude {
     pub use crate::hashes::*;
     pub use crate::pbr_path::*;
     pub use crate::material::*;
+    pub use crate::material_preview::MaterialPreview;
 }
 
 use prelude::*;

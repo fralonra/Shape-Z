@@ -283,6 +283,10 @@ impl ScriptVec3f {
             WORLD.lock().unwrap().needs_update = true;
         });
 
+        engine.register_fn("random", || -> f32 {
+            rand::random()
+        });
+
         // Hit Record
         HitRecord::register(engine);
 

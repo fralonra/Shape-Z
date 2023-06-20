@@ -39,7 +39,7 @@ pub trait Widget : Sync + Send {
         false
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, world: &World) -> bool {
         false
     }
 

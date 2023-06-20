@@ -261,6 +261,11 @@ impl Tile {
     }
 
     /// Set the voxel at the given position
+    pub fn clear_all(&mut self) {
+        self.data = vec![None; self.size * self.size * self.size];
+    }
+
+    /// Set the voxel at the given position
     pub fn set_voxel_script(&mut self, loc: ScriptVec3i, color_value: i32, material_value: i32) {
         self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some((color_value as u8, material_value as u8)));
     }
@@ -298,14 +303,14 @@ impl Tile {
         self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, None);
     }
 
-
     /// Register to the engine
     pub fn register(engine: &mut Engine) {
         engine.register_type_with_name::<Tile>("Tile")
             .register_get("size", Tile::get_size)
             .register_fn("set", Tile::set_voxel_script)
             .register_fn("set", Tile::set_voxel_color_script)
-            .register_fn("clear", Tile::clear_voxel_script);
+            .register_fn("clear_at", Tile::clear_voxel_script)
+            .register_fn("clear_all", Tile::clear_all);
     }
 
 }

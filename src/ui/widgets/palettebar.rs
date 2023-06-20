@@ -13,6 +13,11 @@ pub struct PaletteBar {
 
     rect                : Rect,
     palette_r           : Rect,
+
+    switch_y            : usize,
+
+    preview             : MaterialPreview,
+    preview_buffer      : ColorBuffer
 }
 
 impl Widget for PaletteBar {
@@ -24,6 +29,11 @@ impl Widget for PaletteBar {
 
             rect        : Rect::empty(),
             palette_r   : Rect::empty(),
+
+            switch_y    : 0,
+
+            preview     : MaterialPreview::new(),
+            preview_buffer : ColorBuffer::new(10, 10),
         }
     }
 
@@ -39,14 +49,18 @@ impl Widget for PaletteBar {
         ctx.draw.rect(pixels, &(r.0, r.1, r.2, 2), ctx.width, &[0, 0, 0, 255]);
         ctx.draw.rect(pixels, &(r.0, r.1 + r.3 - 1, r.2, 1), ctx.width, &[0, 0, 0, 255]);
 
+        if self.preview_buffer.width != r.2 || self.preview_buffer.height != r.2 {
+            self.preview_buffer = ColorBuffer::new(r.2, r.2);
+        }
+
+        let x = r.0 + 0;
+        let y = r.1 + 2;
+        let size = 16;
+        let mut pr = (x, y, size, size);
+
         // Palette
 
         if self.mode == Mode::Color {
-
-            let x = r.0 + 0;
-            let y = r.1 + 2;
-            let size = 16;
-            let mut pr = (x, y, size, size);
 
             let mut in_row = 0;
             let mut row_counter = 0;
@@ -75,13 +89,18 @@ impl Widget for PaletteBar {
                 in_row += 1;
             }
             row_counter += 1;
+            pr.1 += size;
+
             self.palette_r = Rect::new(x, y, 10 * size, row_counter * size);
         }
+
+        pr.1 += 2;
+        self.switch_y = pr.1;
 
         // Switch
 
         let mut br: (usize, usize, usize, usize) = r.clone();
-        br.1 = br.1 + br.3 - 30 - 1;
+        br.1 = pr.1;
         br.3 = 30;
 
         //ctx.draw.rounded_rect_with_border(pixels, &br, context.width,  &context.color_toolbar, &(0.0, 0.0, 0.0, 0.0), &context.color_selected, 1.5);
@@ -107,6 +126,11 @@ impl Widget for PaletteBar {
 
             ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &color, theframework::thedraw2d::TheTextAlignment::Center);
         }
+
+        //self.preview.render(&mut self.preview_buffer, context);
+
+        self.preview_buffer.convert_to_u8_at(pixels, (0, self.rect.y + self.rect.height - self.rect.width, ctx.width, ctx.height));
+
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
@@ -117,7 +141,7 @@ impl Widget for PaletteBar {
         }
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
         if self.rect.is_inside((x as usize, y as usize)) {
 
             if self.palette_r.is_inside((x as usize, y as usize)) {
@@ -128,15 +152,19 @@ impl Widget for PaletteBar {
                 let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
 
                 if self.mode == Mode::Color {
+                    self.preview.color = index as u8;
                     context.cmd = Some(Command::ColorIndexChanged(index as u8));
+                    self.preview.render(&mut self.preview_buffer, context);
                 } else {
+                    self.preview.material = index as u8;
                     context.cmd = Some(Command::MaterialIndexChanged(index as u8));
+                    self.preview.render(&mut self.preview_buffer, context);
                 }
 
                 return true;
             }
 
-            if (y as usize) > self.rect.y + self.rect.height - 30 {
+            if (y as usize) > self.switch_y && (y as usize) < self.switch_y + 30 {
                 if (x as usize) < self.rect.x + self.rect.width / 2 {
                     if self.mode != Mode::Color {
                         self.mode = Mode::Color;
@@ -163,9 +191,13 @@ impl Widget for PaletteBar {
 
                 let index = (xx.floor() + yy.floor() * 10.0).clamp(0.0, 255.0);
                 if self.mode == Mode::Color {
+                    self.preview.color = index as u8;
                     context.cmd = Some(Command::ColorIndexChanged(index as u8));
+                    self.preview.render(&mut self.preview_buffer, context);
                 } else {
+                    self.preview.material = index as u8;
                     context.cmd = Some(Command::MaterialIndexChanged(index as u8));
+                    self.preview.render(&mut self.preview_buffer, context);
                 }
 
                 return true;

@@ -159,7 +159,7 @@ impl Widget for Settings {
         }
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, world: &World) -> bool {
         if context.curr_key.is_none() { return false; }
 
         if self.rect.is_inside((x as usize, y as usize)) {
@@ -218,7 +218,7 @@ impl Widget for Settings {
             }*/
 
             for w in &mut self.widgets {
-                _ = w.touch_down(x, y, context);
+                _ = w.touch_down(x, y, context, world);
             }
             true
         } else {

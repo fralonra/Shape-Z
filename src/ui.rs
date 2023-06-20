@@ -1,11 +1,13 @@
 pub mod widgets;
 pub mod rect;
 pub mod context;
+pub mod navigator;
 
 pub mod prelude {
     pub use crate::ui::widgets::*;
     pub use crate::ui::rect::Rect;
     pub use crate::ui::context::*;
+    pub use crate::ui::navigator::Navigator;
 
     pub use crate::ui::widgets::text_button::*;
     pub use crate::ui::widgets::settings::*;
@@ -83,7 +85,7 @@ impl UI {
             toolbar_height          : 90,
             palettebar_width        : 162,
             settings_width          : 200,
-            browser_height          : 150,
+            browser_height          : 180,
         }
     }
 
@@ -133,13 +135,13 @@ impl UI {
 
         // --- ModeBar
 
-        let modebar_rect: Rect = Rect::new(0, self.toolbar_height, self.palettebar_width, ctx.height - self.toolbar_height - self.browser_height);
+        let modebar_rect: Rect = Rect::new(0, self.toolbar_height, self.palettebar_width, ctx.height - self.toolbar_height);
 
         self.widgets[ModeBarIndex as usize].set_rect(modebar_rect.clone());
 
         // --- Browser
 
-        let browser_rect: Rect = Rect::new(0, context.height - self.browser_height, context.width - self.settings_width, self.browser_height);
+        let browser_rect: Rect = Rect::new(self.palettebar_width, context.height - self.browser_height, context.width - self.settings_width -  self.palettebar_width, self.browser_height);
 
         self.widgets[BrowserIndex as usize].set_rect(browser_rect.clone());
 
@@ -164,17 +166,17 @@ impl UI {
         false
     }
 
-    pub fn touch_down(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+    pub fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, world: &World) -> bool {
 
         for w in &mut self.toolbar_widgets {
-            if w.touch_down(x, y, context) {
+            if w.touch_down(x, y, context, world) {
                 self.toolbar_dirty = true;
                 return true;
             }
         }
 
         for w in &mut self.widgets {
-            if w.touch_down(x, y, context) {
+            if w.touch_down(x, y, context, world) {
                 return true;
             }
         }
