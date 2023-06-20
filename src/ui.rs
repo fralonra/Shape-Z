@@ -26,6 +26,7 @@ enum WidgetIndices {
 #[repr(usize)]
 enum ToolBarIndices {
     EditSwitchIndex,
+    IsoButtonIndex,
 }
 
 use WidgetIndices::*;
@@ -74,6 +75,12 @@ impl UI {
         edit_switch.set_cmd(Command::EditStateSwitched);
         toolbar_widgets.push(edit_switch);
 
+        let mut iso_button = Box::new(TextButton::new());
+        iso_button.set_text("ISO".to_string());
+        iso_button.set_cmd(Command::IsoStateSwitched);
+        iso_button.set_has_state(false);
+        toolbar_widgets.push(iso_button);
+
         Self {
             widgets,
             toolbar_widgets,
@@ -117,6 +124,7 @@ impl UI {
             }
 
             self.toolbar_widgets[EditSwitchIndex as usize].set_rect(Rect::new(10, 52, 200, 34));
+            self.toolbar_widgets[IsoButtonIndex as usize].set_rect(Rect::new(ctx.width - 125, 52, 120, 34));
 
             for w in &mut self.toolbar_widgets {
                 w.draw(frame, context, world, ctx);
@@ -216,6 +224,11 @@ impl UI {
     /// Returns the edit state
     pub fn get_edit_state(&self) -> bool {
         !self.toolbar_widgets[EditSwitchIndex as usize].get_state()
+    }
+
+    /// Returns the iso state
+    pub fn get_iso_state(&self) -> bool {
+        !self.toolbar_widgets[IsoButtonIndex as usize].get_state()
     }
 
 }

@@ -17,7 +17,6 @@ impl World {
 
         let mut tiles  = FxHashMap::default();
 
-        // let camera = Camera::new(vec3f(0.0, 5.0, 5.0), Vec3f::zero(), 70.0);
         let camera = Camera::new(vec3f(0.0, 2.0, 2.0), Vec3f::new(0.0, 1.0, 0.0), 45.0);
 
         tiles.insert((-1, 0, 0), Tile::new(24));
@@ -52,7 +51,7 @@ impl World {
     pub fn set_focus(&mut self, at: Vec3i) {
         self.camera.center.x = at.x as f32 + 0.5;
         self.camera.center.y = at.y as f32 + 0.5;
-        self.camera.comput_orbit(vec2f(0.0, 0.0));
+        self.camera.compute_orbit(vec2f(0.0, 0.0));
         self.needs_update = true;
     }
 
@@ -94,7 +93,13 @@ impl World {
                     //let cam_off = vec2f(0.5, 0.5);
                     // let ray = self.camera.create_ray(uv, screen, cam_off);
 
-                    let mut ray = self.camera.create_orbit_ray(uv, screen, cam_off);
+                    let mut ray;
+
+                    if context.iso_state {
+                        ray = self.camera.create_iso_ray(uv, screen, cam_off);
+                    } else {
+                        ray = self.camera.create_orbit_ray(uv, screen, cam_off);
+                    }
 
                     let mut color;
 
@@ -300,7 +305,7 @@ impl World {
 
     }
 
-    pub fn hit_at(&self, pos: Vec2f, buffer: &ColorBuffer) -> Option<HitRecord> {
+    pub fn hit_at(&self, pos: Vec2f, buffer: &ColorBuffer, iso_state: bool) -> Option<HitRecord> {
 
         let x: f32 = pos.x / buffer.width as f32;
         let y: f32 = pos.y / buffer.height as f32;
@@ -309,7 +314,12 @@ impl World {
 
         let uv = vec2f(x, 1.0 - y);
 
-        let ray = self.camera.create_orbit_ray(uv, screen, vec2f(0.5, 0.5));
+        let ray;
+        if iso_state {
+            ray = self.camera.create_iso_ray(uv, screen, vec2f(0.5, 0.5));
+        } else {
+            ray = self.camera.create_orbit_ray(uv, screen, vec2f(0.5, 0.5));
+        }
 
         if let Some(hit) = self.dda_recursive(&ray) {
             Some(hit)

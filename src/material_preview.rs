@@ -39,7 +39,7 @@ impl MaterialPreview {
         //let _start = self.get_time();
 
         let sp_center = Vec3f::zero();
-        let sp_radius = 0.5;
+        let sp_radius = 0.7;
         let sp_color = context.palette.at_vec_to_linear(self.color);
 
         let material = &context.materials[self.material as usize];

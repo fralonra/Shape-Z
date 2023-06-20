@@ -116,15 +116,14 @@ impl Widget for PaletteBar {
         right_r.0 += left_r.2;
 
         color = if self.mode == Mode::Material { &context.color_selected } else { &context.color_widget };
-
         ctx.draw.rect(pixels, &right_r, context.width,  &color);
 
         if let Some(font) = &context.font {
-            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, 20.0, &"COL".to_string(), &color, theframework::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, 20.0, &"COL".to_string(), &context.color_white, theframework::thedraw2d::TheTextAlignment::Center);
 
-            color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_widget };
+            //color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_widget };
 
-            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &color, theframework::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &context.color_white, theframework::thedraw2d::TheTextAlignment::Center);
         }
 
         //self.preview.render(&mut self.preview_buffer, context);
@@ -144,6 +143,20 @@ impl Widget for PaletteBar {
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
         if self.rect.is_inside((x as usize, y as usize)) {
 
+            if (y as usize) > self.switch_y && (y as usize) < self.switch_y + 30 {
+                if (x as usize) < self.rect.x + self.rect.width / 2 {
+                    if self.mode != Mode::Color {
+                        self.mode = Mode::Color;
+                        return true;
+                    }
+                } else {
+                    if self.mode != Mode::Material {
+                        self.mode = Mode::Material;
+                        return true;
+                    }
+                }
+            }
+
             if self.palette_r.is_inside((x as usize, y as usize)) {
                 let size = 16.0;
                 let xx: f32 = (x - self.palette_r.x as f32) / size;
@@ -162,20 +175,6 @@ impl Widget for PaletteBar {
                 }
 
                 return true;
-            }
-
-            if (y as usize) > self.switch_y && (y as usize) < self.switch_y + 30 {
-                if (x as usize) < self.rect.x + self.rect.width / 2 {
-                    if self.mode != Mode::Color {
-                        self.mode = Mode::Color;
-                        return true;
-                    }
-                } else {
-                    if self.mode != Mode::Material {
-                        self.mode = Mode::Material;
-                        return true;
-                    }
-                }
             }
         }
         false

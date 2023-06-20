@@ -165,8 +165,35 @@ impl Camera {
         Ray::new(self.origin, normalize(dir))
     }
 
+    pub fn create_iso_ray(&self, uv: Vec2f, screen: Vec2f, offset: Vec2f) -> Ray {
+
+        let ratio = screen.x / screen.y;
+        let pixel_size = Vec2f::new( 1.0 / screen.x, 1.0 / screen.y);
+
+        let cam_origin = self.origin;
+        let cam_look_at = self.center;
+
+        let half_width = ((self.fov + 100.0).to_radians() * 0.5).tan();
+        let half_height = half_width / ratio;
+
+        let up_vector = Vec3f::new(0.0, 1.0, 0.0);
+
+        let w = normalize(cam_origin - cam_look_at);
+        let u = cross(up_vector, w);
+        let v = cross(w, u);
+
+        let horizontal = u * half_width * 2.0;
+        let vertical = v * half_height * 2.0;
+
+        let mut out_origin = cam_origin;
+        out_origin += horizontal * (pixel_size.x * offset.x + uv.x - 0.5);
+        out_origin += vertical * (pixel_size.y * offset.y + uv.y - 0.5);
+
+        Ray::new(out_origin, normalize(-w))
+    }
+
     /// Computes the orbi camera vectors. Based on https://www.shadertoy.com/view/ttfyzN
-    pub fn comput_orbit(&mut self, mouse_delta: Vec2f) {
+    pub fn compute_orbit(&mut self, mouse_delta: Vec2f) {
 
         #[inline(always)]
         pub fn mix(a: &f32, b: &f32, v: f32) -> f32 {

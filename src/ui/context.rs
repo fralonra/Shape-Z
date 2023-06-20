@@ -7,12 +7,11 @@ pub enum Command {
     ColorIndexChanged(u8),
     MaterialIndexChanged(u8),
     EditStateSwitched,
+    IsoStateSwitched,
     TileSelected(i32, i32, i32),
 }
 
 pub struct Context {
-    //pub shapes              : Vec<Tile>,
-    //pub patterns            : Vec<Box<dyn Pattern>>,
 
     pub width                   : usize,
     pub height                  : usize,
@@ -45,6 +44,7 @@ pub struct Context {
     pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
 
     pub edit_state              : bool,
+    pub iso_state               : bool,
 
     // Tools
 
@@ -158,7 +158,7 @@ impl Context {
             height              : 0,
 
             color_button        : [53, 53, 53, 255],
-            color_selected      : [135, 135, 135, 255],
+            color_selected      : [110, 110, 110, 255],
             color_widget        : [24, 24, 24, 255],
             color_toolbar       : [29, 29, 29, 255],
             color_text          : [244, 244, 244, 255],
@@ -186,6 +186,7 @@ impl Context {
             icons,
 
             edit_state          : true,
+            iso_state           : false,
 
             engine,
             tools,

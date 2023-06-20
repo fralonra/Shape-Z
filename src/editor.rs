@@ -33,7 +33,7 @@ impl TheTrait for Editor {
 
         WORLD.lock().unwrap().camera.center.x = 0.5;
         WORLD.lock().unwrap().camera.center.y = 0.5;
-        WORLD.lock().unwrap().camera.comput_orbit(Vec2f::zero());
+        WORLD.lock().unwrap().camera.compute_orbit(Vec2f::zero());
 
         Self {
 
@@ -149,7 +149,7 @@ impl TheTrait for Editor {
                 _ => {}
             }*/
 
-            let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer);
+            let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer, self.context.iso_state);
 
             if let Some(mut hit) = hit {
                 self.context.curr_key = Some(hit.key);
@@ -193,7 +193,7 @@ impl TheTrait for Editor {
                 click_drag.1 = y;
                 self.click_drag = Some(click_drag);
 
-                WORLD.lock().unwrap().camera.comput_orbit(vec2f(xx, yy));
+                WORLD.lock().unwrap().camera.compute_orbit(vec2f(xx, yy));
 
                 //WORLD.lock().unwrap().camera.set_top_down_angle(10.0, 2.0, vec3f(0.0, 0.0, 0.0));
 
@@ -260,6 +260,10 @@ impl MyEditor for Editor {
                 },
                 Command::EditStateSwitched => {
                     self.context.edit_state = self.ui.get_edit_state();
+                    WORLD.lock().unwrap().needs_update = true;
+                },
+                Command::IsoStateSwitched => {
+                    self.context.iso_state = !self.ui.get_iso_state();
                     WORLD.lock().unwrap().needs_update = true;
                 },
                 Command::TileSelected(x, y, z) => {
