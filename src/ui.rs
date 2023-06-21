@@ -76,7 +76,7 @@ impl UI {
         toolbar_widgets.push(edit_switch);
 
         let mut iso_button = Box::new(TextButton::new());
-        iso_button.set_text("ISO".to_string());
+        iso_button.set_text("ORTHO".to_string());
         iso_button.set_cmd(Command::IsoStateSwitched);
         iso_button.set_has_state(false);
         toolbar_widgets.push(iso_button);
@@ -124,7 +124,7 @@ impl UI {
             }
 
             self.toolbar_widgets[EditSwitchIndex as usize].set_rect(Rect::new(10, 52, 200, 34));
-            self.toolbar_widgets[IsoButtonIndex as usize].set_rect(Rect::new(ctx.width - 125, 52, 120, 34));
+            self.toolbar_widgets[IsoButtonIndex as usize].set_rect(Rect::new(ctx.width - 125, 52, 120, 32));
 
             for w in &mut self.toolbar_widgets {
                 w.draw(frame, context, world, ctx);

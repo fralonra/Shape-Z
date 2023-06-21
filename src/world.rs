@@ -19,9 +19,9 @@ impl World {
 
         let camera = Camera::new(vec3f(0.0, 2.0, 2.0), Vec3f::new(0.0, 1.0, 0.0), 45.0);
 
-        tiles.insert((-1, 0, 0), Tile::new(24));
-        tiles.insert((0, 0, 0), Tile::new(24));
-        tiles.insert((1, 0, 0), Tile::new(24));
+        tiles.insert((-1, 0, 0), Tile::new(49));
+        tiles.insert((0, 0, 0), Tile::new(49));
+        tiles.insert((1, 0, 0), Tile::new(49));
 
         Self {
             camera,

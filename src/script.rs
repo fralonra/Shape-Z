@@ -294,6 +294,17 @@ impl ScriptVec3f {
         engine.register_type_with_name::<SideEnum>("Side")
             .register_static_module("Side", exported_module!(side_module).into());
 
+
+        // Math
+
+        engine.register_fn("length", |a: ScriptVec3f| -> f32 {
+            length(a.v)
+        });
+
+        engine.register_fn("-", |a: ScriptVec3f, b: ScriptVec3f| -> ScriptVec3f {
+            ScriptVec3f::new(a.v.x - b.v.x, a.v.y - b.v.y, a.v.z - b.v.z)
+        });
+
     }
 }
 

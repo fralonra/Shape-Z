@@ -41,6 +41,8 @@ impl Tile {
             }
         }
 
+        //println!("The useful size of `v` is {}", std::mem::size_of_val(&*data));
+
         Self {
             camera          : camera,
 
@@ -292,7 +294,6 @@ impl Tile {
 
         if let Some(color_index) = color_index {
             if let Some(material_index) = material_index {
-                println!("{}, {}", color_index, material_index);
                 self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some((color_index as u8, material_index as u8)));
             }
         }
