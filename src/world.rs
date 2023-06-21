@@ -301,7 +301,7 @@ impl World {
         });
 
         let _stop = self.get_time();
-        //println!("renter time {:?}, iter: {}", _stop - _start, iteration);
+        println!("renter time {:?}, iter: {}", _stop - _start, iteration);
 
     }
 

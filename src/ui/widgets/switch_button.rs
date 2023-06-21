@@ -49,11 +49,11 @@ impl Widget for SwitchButton {
         let r = self.rect.to_usize();
         let rounding = (r.3 as f32 / 2.0 + 0.5).ceil();
 
-        let mut color = if self.state { &context.color_white } else { &context.color_black };
+        let mut color = if self.state { &context.color_selected } else { &context.color_button };
 
         ctx.draw.rounded_rect(pixels, &(r.0 + 1, r.1, r.2 - 1, r.3), context.width, &color, &(rounding, rounding, rounding, rounding));
 
-        color = if !self.state { &context.color_white } else { &context.color_black };
+        color = if !self.state { &context.color_selected } else { &context.color_button };
 
         let mut left_r = r.clone();
         left_r.2 = left_r.2 / 2 + 5;
@@ -61,17 +61,17 @@ impl Widget for SwitchButton {
 
         if let Some(font) = &context.font {
 
-            color = if self.state { &context.color_white } else { &context.color_black };
+            // color = if self.state { &context.color_selected } else { &context.color_button };
 
-            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, r.3 as f32 / 2.0, &self.text_list[0], &color, theframework::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, r.3 as f32 / 2.0, &self.text_list[0], &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
 
-            color = if !self.state { &context.color_white } else { &context.color_black };
+            // color = if !self.state { &context.color_selected } else { &context.color_button };
 
             let mut right_r = r.clone();
             right_r.0 = right_r.0 + right_r.2 / 2;
             right_r.2 = right_r.2 / 2;
 
-            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, r.3 as f32 / 2.0, &self.text_list[1], &color, theframework::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, r.3 as f32 / 2.0, &self.text_list[1], &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
         }
     }
 

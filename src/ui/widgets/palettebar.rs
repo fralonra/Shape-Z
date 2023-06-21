@@ -108,22 +108,22 @@ impl Widget for PaletteBar {
         let mut left_r = br.clone();
         left_r.2 = left_r.2 / 2;
 
-        let mut color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_widget };
+        let mut color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_button };
 
         ctx.draw.rect(pixels, &left_r, context.width,  &color);
 
         let mut right_r = left_r.clone();
         right_r.0 += left_r.2;
 
-        color = if self.mode == Mode::Material { &context.color_selected } else { &context.color_widget };
+        color = if self.mode == Mode::Material { &context.color_selected } else { &context.color_button };
         ctx.draw.rect(pixels, &right_r, context.width,  &color);
 
         if let Some(font) = &context.font {
-            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, 20.0, &"COL".to_string(), &context.color_white, theframework::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.blend_text_rect(pixels, &left_r, context.width, &font, 20.0, &"COL".to_string(), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
 
             //color = if self.mode == Mode::Color { &context.color_selected } else { &context.color_widget };
 
-            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &context.color_white, theframework::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.blend_text_rect(pixels, &right_r, context.width, &font, 20.0, &"MAT".to_string(), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
         }
 
         //self.preview.render(&mut self.preview_buffer, context);
