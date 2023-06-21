@@ -1776,6 +1776,8 @@ dependencies = [
 [[package]]
 name = "theframework"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7fd7f781459d5c555e5b2120fd14e5c24abe2a9fa5c07721a0388829386e171"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
@@ -1794,6 +1796,8 @@ dependencies = [
 [[package]]
 name = "therenderer"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a47729c80e8c768c7ee7d4f358f7d5c0d3302105620e944913a6c4d8be10fa8"
 dependencies = [
  "fontdue",
  "maths-rs",

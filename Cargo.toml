@@ -10,7 +10,8 @@ rayon = "1.7.0"
 serde = { version = "1.0.159", features = ["derive"] }
 serde_json = "1.0.96"
 maths-rs = { version = "0.2", features = ["short_types", "short_hand_constructors", "casts", "serde"] }
-theframework = { path = "../theframework" }
+theframework = "0.1.0"
+#theframework = { path = "../theframework" }
 lazy_static = "1.4.0"
 rust-embed = { version = "6.4.0", default-features = true, features = ["include-exclude"] }
 fontdue = "0.7.2"
