@@ -9,6 +9,9 @@ pub enum Command {
     EditStateSwitched,
     IsoStateSwitched,
     TileSelected(i32, i32, i32),
+    TileFocusSelected(i32, i32, i32),
+    CreateTile(i32, i32, i32),
+    DeleteTile(i32, i32, i32),
 }
 
 pub struct Context {
@@ -29,7 +32,7 @@ pub struct Context {
     pub color_black             : [u8;4],
 
     pub curr_tile               : Tile,
-    pub curr_key                : Option<Vec3i>,
+    pub curr_keys               : Vec<Vec3i>,
 
     pub curr_tool               : Tool,
     pub curr_tool_role          : ToolRole,
@@ -172,7 +175,7 @@ impl Context {
             curr_tile           : Tile::new(9),
             curr_tool_role      : ToolRole::Voxel,
 
-            curr_key            : None,
+            curr_keys           : vec![],
 
             curr_tool,
             curr_tools,

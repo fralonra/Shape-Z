@@ -160,7 +160,7 @@ impl Widget for Settings {
     }
 
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, world: &World) -> bool {
-        if context.curr_key.is_none() { return false; }
+        if context.curr_keys.is_empty() { return false; }
 
         if self.rect.is_inside((x as usize, y as usize)) {
 

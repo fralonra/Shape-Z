@@ -152,14 +152,14 @@ impl TheTrait for Editor {
             let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer, self.context.iso_state);
 
             if let Some(mut hit) = hit {
-                self.context.curr_key = Some(hit.key);
+                self.context.curr_keys = vec!(hit.key);
                 hit.compute_side();
                 WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
                 self.context.curr_tool.hit(&self.context.engine, hit);
                 consumed = true;
             } else {
-                if self.context.curr_key.is_some() {
-                    self.context.curr_key = None;
+                if self.context.curr_keys.is_empty() == false {
+                    self.context.curr_keys = vec![];
                     WORLD.lock().unwrap().needs_update = true;
                     consumed = true;
                 }
@@ -267,8 +267,39 @@ impl MyEditor for Editor {
                     WORLD.lock().unwrap().needs_update = true;
                 },
                 Command::TileSelected(x, y, z) => {
-                    self.context.curr_key = Some(vec3i(*x, *y, *z));
+                    if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
+                        if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
+                            self.context.curr_keys.remove(index);
+                        }
+                    } else {
+                        self.context.curr_keys.push(vec3i(*x, *y, *z));
+                    }
+                },
+                Command::TileFocusSelected(x, y, z) => {
+                    if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
+                        if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
+                            self.context.curr_keys.remove(index);
+                        }
+                    } else {
+                        self.context.curr_keys.push(vec3i(*x, *y, *z));
+                    }
                     WORLD.lock().unwrap().set_focus(vec3i(*x, *y, *z));
+                },
+                Command::CreateTile(x, y, z) => {
+                    let mut world = WORLD.lock().unwrap();
+
+                    if world.project.tiles.contains_key(&(*x, *y, *z)) == false {
+                        world.project.tiles.insert((*x, *y, *z), Tile::new(49));
+                        world.needs_update = true;
+                    }
+                },
+                Command::DeleteTile(x, y, z) => {
+                    let mut world = WORLD.lock().unwrap();
+
+                    if world.project.tiles.contains_key(&(*x, *y, *z)) == true {
+                        world.project.tiles.remove(&(*x, *y, *z));
+                        world.needs_update = true;
+                    }
                 },
                 _ => {}
             }

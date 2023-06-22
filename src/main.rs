@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use theframework::*;
 
 pub mod editor;
@@ -17,6 +19,7 @@ pub mod hashes;
 pub mod pbr_path;
 pub mod material;
 pub mod material_preview;
+pub mod project;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -55,6 +58,7 @@ pub mod prelude {
     pub use crate::pbr_path::*;
     pub use crate::material::*;
     pub use crate::material_preview::MaterialPreview;
+    pub use crate::project::*;
 }
 
 use prelude::*;

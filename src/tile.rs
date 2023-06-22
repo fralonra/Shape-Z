@@ -23,14 +23,14 @@ impl Tile {
 
         let mut data = vec![None; size * size * size];
 
-        // // Left wall
-        for z in 0..size {
-            for y in 0..size {
-                let index = 0 + y * size + z * size * size;
+        // Left wall
+        // for z in 0..size {
+        //     for y in 0..size {
+        //         let index = 0 + y * size + z * size * size;
 
-                data[index] = Some((20, 20));
-            }
-        }
+        //         data[index] = Some((20, 20));
+        //     }
+        // }
 
         // Bottom floor
         for x in 0..size {

@@ -2,11 +2,10 @@ use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 use rand::{thread_rng, Rng, rngs::ThreadRng};
 
-#[derive(Clone)]
 pub struct World {
     pub camera              : Camera,
 
-    pub tiles               : FxHashMap<(i32, i32, i32), Tile>,
+    pub project             : Project,
     pub needs_update        : bool,
 
     pub curr_tool           : Tool,
@@ -15,18 +14,14 @@ pub struct World {
 impl World {
     pub fn new() -> Self {
 
-        let mut tiles  = FxHashMap::default();
-
         let camera = Camera::new(vec3f(0.0, 2.0, 2.0), Vec3f::new(0.0, 1.0, 0.0), 45.0);
 
-        tiles.insert((-1, 0, 0), Tile::new(49));
-        tiles.insert((0, 0, 0), Tile::new(49));
-        tiles.insert((1, 0, 0), Tile::new(49));
+        let project = Project::new();
 
         Self {
             camera,
 
-            tiles,
+            project,
             needs_update    : true,
 
             curr_tool       : Tool::new("".into()),
@@ -35,7 +30,7 @@ impl World {
 
     /// Get a tile
     pub fn get_tile(&self, at: Vec3i) -> Option<Tile> {
-        if let Some(tile) = self.tiles.get(&(at.x, at.y, at.z)) {
+        if let Some(tile) = self.project.tiles.get(&(at.x, at.y, at.z)) {
             Some(tile.clone())
         } else {
             None
@@ -44,7 +39,7 @@ impl World {
 
     /// Set a tile
     pub fn set_tile(&mut self, at: Vec3i, tile: Tile) {
-        self.tiles.insert((at.x, at.y, at.z), tile);
+        self.project.tiles.insert((at.x, at.y, at.z), tile);
     }
 
     /// Set the tile we are looking at
@@ -301,7 +296,7 @@ impl World {
         });
 
         let _stop = self.get_time();
-        println!("renter time {:?}, iter: {}", _stop - _start, iteration);
+        //println!("renter time {:?}, iter: {}", _stop - _start, iteration);
 
     }
 
@@ -357,7 +352,7 @@ impl World {
         for _ii in 0..20 {
             key = Vec3i::from(i);
 
-            if self.tiles.contains_key(&(key.x, key.y, key.z)) {
+            if self.project.tiles.contains_key(&(key.x, key.y, key.z)) {
                 hit = true;
                 break;
             }
@@ -429,7 +424,7 @@ impl World {
         for _ii in 0..20 {
             key = Vec3i::from(i);
 
-            if let Some(tile) = self.tiles.get(&(key.x, key.y, key.z)) {
+            if let Some(tile) = self.project.tiles.get(&(key.x, key.y, key.z)) {
 
                 let mut lro = ray.at(dist);
                 lro -= Vec3f::from(key);

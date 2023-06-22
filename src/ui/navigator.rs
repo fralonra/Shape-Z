@@ -2,7 +2,17 @@
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 use crate::prelude::*;
 
+#[derive(PartialEq)]
+pub enum NavigatorMode {
+    None,
+    Create,
+    Delete,
+    Focus,
+}
+
 pub struct Navigator {
+
+    mode                    : NavigatorMode,
 
     rect                    : Rect,
 
@@ -26,6 +36,8 @@ impl Navigator {
         let tile_size = 70.0;
 
         Self {
+            mode            : NavigatorMode::Focus,
+
             rect            : Rect::empty(),
 
             buffer          : vec![],
@@ -39,6 +51,10 @@ impl Navigator {
             td_pos          : (0.0, 0.0),
             td_offset       : (0.0, 0.0),
         }
+    }
+
+    pub fn set_mode(&mut self, mode: NavigatorMode) {
+        self.mode = mode;
     }
 
     pub fn set_rect(&mut self, rect: Rect) {
@@ -131,11 +147,11 @@ impl Navigator {
                         //     }
                         // }
 
-                        let key = (map_x.floor() as i32, map_y.floor() as i32, 0_i32);
-                        if context.curr_key == Some(vec3i(key.0, key.1, key.2)) {
+                        let key = (map_x.floor() as i32, 0_i32, map_y.floor() as i32);
+                        if context.curr_keys.contains(&vec3i(key.0, key.1, key.2)) {
                             v = 1.0;
                         } else
-                        if world.tiles.contains_key(&key) {
+                        if world.project.tiles.contains_key(&key) {
                             v = 0.6;
                         }
 
@@ -197,7 +213,20 @@ impl Navigator {
 
         //println!("{:?}", p);
 
-        context.cmd = Some(Command::TileSelected(p.0, 0, p.1));
+        if self.mode == NavigatorMode::Create {
+            context.cmd = Some(Command::CreateTile(p.0, 0, p.1));
+
+        } else
+        if self.mode == NavigatorMode::Delete {
+            context.cmd = Some(Command::DeleteTile(p.0, 0, p.1));
+
+        } else
+        if self.mode == NavigatorMode::Focus {
+            context.cmd = Some(Command::TileFocusSelected(p.0, 0, p.1));
+        } else {
+            context.cmd = Some(Command::TileSelected(p.0, 0, p.1));
+        }
+
         self.dirty = true;
         true
     }

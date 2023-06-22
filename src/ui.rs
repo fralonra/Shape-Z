@@ -7,7 +7,7 @@ pub mod prelude {
     pub use crate::ui::widgets::*;
     pub use crate::ui::rect::Rect;
     pub use crate::ui::context::*;
-    pub use crate::ui::navigator::Navigator;
+    pub use crate::ui::navigator::*;
 
     pub use crate::ui::widgets::text_button::*;
     pub use crate::ui::widgets::settings::*;
