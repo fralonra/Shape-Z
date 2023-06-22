@@ -13,7 +13,7 @@ impl Project {
 
         let mut tiles  = FxHashMap::default();
 
-        let mut tile = Tile::new(50);
+        let mut tile = Tile::new(Project::tile_size());
         tile.build_aabb();
 
         tiles.insert((-1, 0, 0), tile.clone());
@@ -66,30 +66,11 @@ impl Project {
         }
 
         self.aabb = Some(AABB { min, max } );
-        println!("{:?}", self.aabb);
+        //println!("{:?}", self.aabb);
     }
 
     /// Ray AABB intersection. Taken from https://github.com/svenstaro/bvh/blob/master/src/ray.rs
     pub fn ray_aabb(&self, ray: &Ray, aabb: &AABB) -> bool {
-
-        #[inline(always)]
-        fn min(x: f32, y: f32) -> f32 {
-            if x < y {
-                x
-            } else {
-                y
-            }
-        }
-
-        #[inline(always)]
-        fn max(x: f32, y: f32) -> f32 {
-            if x > y {
-                x
-            } else {
-                y
-            }
-        }
-
         let mut ray_min = (aabb[ray.sign_x].x - ray.o.x) * ray.inv_direction.x;
         let mut ray_max = (aabb[1 - ray.sign_x].x - ray.o.x) * ray.inv_direction.x;
 
@@ -106,5 +87,10 @@ impl Project {
         ray_max = min(ray_max, z_max);
 
         max(ray_min, 0.0) <= ray_max
+    }
+
+    /// The project tile size
+    pub fn tile_size() -> usize {
+        100
     }
 }

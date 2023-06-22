@@ -11,17 +11,19 @@ fn init() {
 }
 
 fn apply(key) {
-    let tile = get_tile(key);
-    tile.set(vec3i(5, 5, 5), 10);
-    set_tile(key, tile);
+    do_floor(key, 0);
 }
 
 fn hit(record) {
-    let tile = get_tile(record.key);
+    let start_y = record.tile_key.y + 1;
+    do_floor(record.key, start_y);
+}
+
+fn do_floor(key, start_y) {
+    let tile = get_tile(key);
 
     let size = tile.size;
 
-    let start_y = record.tile_key.y + 1;
     let height = 1;
 
     for y in 0..height {
@@ -34,5 +36,5 @@ fn hit(record) {
         }
     }
 
-    set_tile(record.key, tile);
+    set_tile(key, tile);
 }

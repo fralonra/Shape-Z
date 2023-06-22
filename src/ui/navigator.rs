@@ -36,7 +36,7 @@ impl Navigator {
         let tile_size = 70.0;
 
         Self {
-            mode            : NavigatorMode::Focus,
+            mode            : NavigatorMode::None,
 
             rect            : Rect::empty(),
 

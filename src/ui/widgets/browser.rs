@@ -58,8 +58,12 @@ impl Widget for Browser {
 
         let mut focus_tile_button = Box::new(TextButton::new());
         focus_tile_button.set_text("FOCUS".to_string());
-        focus_tile_button.set_has_state(true);
+        focus_tile_button.set_has_state(false);
         navi_widgets.push(focus_tile_button);
+
+        let mut apply_tool_button = Box::new(TextButton::new());
+        apply_tool_button.set_text("APPLY TOOL".to_string());
+        navi_widgets.push(apply_tool_button);
 
         Self {
             mode            : Mode::Tools,
@@ -104,7 +108,7 @@ impl Widget for Browser {
             w.draw(pixels, context, world, ctx);
         }
 
-        ctx.draw.rect(pixels, &(r.0 + 220, r.1 + 4, 1, self.header_height - 8), ctx.width, &context.color_black);
+        ctx.draw.rect(pixels, &(r.0 + 220, r.1 + 4, 1, self.header_height - 8), ctx.width, &context.color_selected);
 
         let start_x = r.0 + 230;
 
@@ -114,6 +118,7 @@ impl Widget for Browser {
             self.navi_widgets[0].set_rect(Rect::new(start_x, self.rect.y + 2, 100, self.header_height - 6));
             self.navi_widgets[1].set_rect(Rect::new(start_x+ 110, self.rect.y + 2, 100, self.header_height - 6));
             self.navi_widgets[2].set_rect(Rect::new(start_x+ 220, self.rect.y + 2, 100, self.header_height - 6));
+            self.navi_widgets[3].set_rect(Rect::new(self.rect.x + self.rect.width - 10 - 130, self.rect.y + 2, 130, self.header_height - 6));
 
             for w in &mut self.navi_widgets {
                 w.draw(pixels, context, world, ctx);
@@ -229,6 +234,9 @@ impl Widget for Browser {
                             } else {
                                 self.navigator.set_mode(NavigatorMode::None)
                             }
+                        } else
+                        if index == 3 {
+                            context.cmd = Some(Command::ApplyTool);
                         }
 
                         return true;

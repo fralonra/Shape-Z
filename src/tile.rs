@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
-use rhai::{ Engine };
+use rhai::{ Engine, FuncArgs };
+use std::iter::once;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Tile {
@@ -336,25 +337,6 @@ impl Tile {
 
     /// Ray AABB intersection. Taken from https://github.com/svenstaro/bvh/blob/master/src/ray.rs
     pub fn ray_aabb(&self, ray: &Ray, aabb: &AABB) -> bool {
-
-        #[inline(always)]
-        fn min(x: f32, y: f32) -> f32 {
-            if x < y {
-                x
-            } else {
-                y
-            }
-        }
-
-        #[inline(always)]
-        fn max(x: f32, y: f32) -> f32 {
-            if x > y {
-                x
-            } else {
-                y
-            }
-        }
-
         let mut ray_min = (aabb[ray.sign_x].x - ray.o.x) * ray.inv_direction.x;
         let mut ray_max = (aabb[1 - ray.sign_x].x - ray.o.x) * ray.inv_direction.x;
 
@@ -431,4 +413,10 @@ impl Tile {
             .register_fn("clear_all", Tile::clear_all);
     }
 
+}
+
+impl FuncArgs for Tile {
+    fn parse<C: Extend<rhai::Dynamic>>(self, container: &mut C) {
+        container.extend(once(rhai::Dynamic::from(self)));
+    }
 }

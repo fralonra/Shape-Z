@@ -267,29 +267,33 @@ impl MyEditor for Editor {
                     WORLD.lock().unwrap().needs_update = true;
                 },
                 Command::TileSelected(x, y, z) => {
-                    if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
-                        if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
-                            self.context.curr_keys.remove(index);
+                    if WORLD.lock().unwrap().project.tiles.contains_key(&(*x, *y, *z)) {
+                        if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
+                            if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
+                                self.context.curr_keys.remove(index);
+                            }
+                        } else {
+                            self.context.curr_keys.push(vec3i(*x, *y, *z));
                         }
-                    } else {
-                        self.context.curr_keys.push(vec3i(*x, *y, *z));
                     }
                 },
                 Command::TileFocusSelected(x, y, z) => {
-                    if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
-                        if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
-                            self.context.curr_keys.remove(index);
+                    if WORLD.lock().unwrap().project.tiles.contains_key(&(*x, *y, *z)) {
+                        if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
+                            if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
+                                self.context.curr_keys.remove(index);
+                            }
+                        } else {
+                            self.context.curr_keys.push(vec3i(*x, *y, *z));
                         }
-                    } else {
-                        self.context.curr_keys.push(vec3i(*x, *y, *z));
+                        WORLD.lock().unwrap().set_focus(vec3i(*x, *y, *z));
                     }
-                    WORLD.lock().unwrap().set_focus(vec3i(*x, *y, *z));
                 },
                 Command::CreateTile(x, y, z) => {
                     let mut world = WORLD.lock().unwrap();
 
                     if world.project.tiles.contains_key(&(*x, *y, *z)) == false {
-                        let mut tile = Tile::new(50);
+                        let mut tile = Tile::new(Project::tile_size());
                         tile.build_aabb();
                         world.project.tiles.insert((*x, *y, *z), tile);
                         world.project.build_aabb();
@@ -305,9 +309,14 @@ impl MyEditor for Editor {
                         world.needs_update = true;
                     }
                 },
+                Command::ApplyTool => {
+                    WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
+                    self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
+                }
                 _ => {}
             }
         }
+        self.context.cmd = None;
     }
 
     /// Convert a screen space coordinate to a world coordinate

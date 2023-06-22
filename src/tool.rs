@@ -129,33 +129,32 @@ impl Tool {
     }
 
     /// Apply the tool
-    pub fn apply(&mut self, engine: &Engine, key: Vec3i) {
-        println!("apply");
-
+    pub fn apply(&mut self, engine: &Engine, keys: Vec<Vec3i>) {
         if let Some(ast) = &self.ast {
+            for k in &keys {
+                let key : Dynamic = Dynamic::from(ScriptVec3i::from_vec3i(*k));
 
-            let location : Dynamic = Dynamic::from(ScriptVec3i::from_vec3i(key));
+                #[allow(deprecated)]
+                let result = engine.call_fn_raw(
+                                &mut Scope::new(),
+                                &ast,
+                                false,
+                                true,
+                                "apply",
+                                Some(&mut self.this_map),
+                                [(key),]//[(pos.0 as i32).into(), (pos.1 as i32).into()]
+                            );
 
-            #[allow(deprecated)]
-            let result = engine.call_fn_raw(
-                            &mut Scope::new(),
-                            &ast,
-                            false,
-                            true,
-                            "apply",
-                            Some(&mut self.this_map),
-                            [location]//[(pos.0 as i32).into(), (pos.1 as i32).into()]
-                        );
-
-            println!("{:?}", result);
+                if let Some(err) = result.err() {
+                    println!("{}", err.to_string());
+                }
+            }
         }
     }
 
     /// Apply the tool
     pub fn hit(&mut self, engine: &Engine, hit_record: HitRecord) {
-
         if let Some(ast) = &self.ast {
-
             let hit : Dynamic = Dynamic::from(hit_record);
 
             #[allow(deprecated)]
@@ -169,7 +168,9 @@ impl Tool {
                             [(hit),]
                         );
 
-            println!("{:?}", result);
+            if let Some(err) = result.err() {
+                println!("{}", err.to_string());
+            }
         }
     }
 

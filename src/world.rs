@@ -301,7 +301,7 @@ impl World {
         });
 
         let _stop = self.get_time();
-        println!("renter time {:?}, iter: {}", _stop - _start, iteration);
+        //println!("renter time {:?}, iter: {}", _stop - _start, iteration);
     }
 
     pub fn hit_at(&self, pos: Vec2f, buffer: &ColorBuffer, iso_state: bool) -> Option<HitRecord> {
