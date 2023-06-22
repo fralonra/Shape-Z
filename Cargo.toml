@@ -2,6 +2,7 @@
 name = "shape-z"
 version = "0.1.0"
 edition = "2021"
+description = "A procedural voxel editor."
 
 [dependencies]
 noise = "0.8.1"
@@ -33,3 +34,15 @@ features = [
 # [lib]
 # name = "rustapi"
 # crate-type = ["staticlib"]
+
+[package.metadata.bundle]
+name = "Shape-Z"
+identifier = "com.moenig.shapez"
+icon = ["build/logo.png"]
+copyright = "Copyright (c) Markus Moenig 2022. All rights reserved."
+category = "Game"
+short_description = "A procedural voxel editor."
+long_description = """
+A procedural voxel editor which will allow the creation of pixel art 
+and realistic renderings based on script based tools which utilize SDF shapes.
+"""
