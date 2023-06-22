@@ -4,27 +4,6 @@ use core::f32;
 use std::f32::consts::PI;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
-pub struct Ray {
-    pub o           : Vec3f,
-    pub d           : Vec3f,
-}
-
-impl Ray {
-
-    pub fn new(o : Vec3f, d : Vec3f) -> Self {
-        Self {
-            o,
-            d,
-        }
-    }
-
-    /// Returns the position on the ray at the given distance
-    pub fn at(&self, d: f32) -> Vec3f {
-        self.o + self.d * d
-    }
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Camera {
     pub origin      : Vec3f,
     pub center      : Vec3f,

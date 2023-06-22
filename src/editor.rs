@@ -289,7 +289,10 @@ impl MyEditor for Editor {
                     let mut world = WORLD.lock().unwrap();
 
                     if world.project.tiles.contains_key(&(*x, *y, *z)) == false {
-                        world.project.tiles.insert((*x, *y, *z), Tile::new(49));
+                        let mut tile = Tile::new(50);
+                        tile.build_aabb();
+                        world.project.tiles.insert((*x, *y, *z), tile);
+                        world.project.build_aabb();
                         world.needs_update = true;
                     }
                 },
@@ -298,6 +301,7 @@ impl MyEditor for Editor {
 
                     if world.project.tiles.contains_key(&(*x, *y, *z)) == true {
                         world.project.tiles.remove(&(*x, *y, *z));
+                        world.project.build_aabb();
                         world.needs_update = true;
                     }
                 },

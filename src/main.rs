@@ -15,7 +15,7 @@ pub mod tile;
 pub mod palette;
 pub mod tool;
 pub mod script;
-pub mod hashes;
+pub mod misc;
 pub mod pbr_path;
 pub mod material;
 pub mod material_preview;
@@ -54,7 +54,7 @@ pub mod prelude {
     pub use crate::palette::Palette;
     pub use crate::tool::Tool;
     pub use crate::script::*;
-    pub use crate::hashes::*;
+    pub use crate::misc::*;
     pub use crate::pbr_path::*;
     pub use crate::material::*;
     pub use crate::material_preview::MaterialPreview;

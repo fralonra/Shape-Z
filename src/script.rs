@@ -278,7 +278,8 @@ impl ScriptVec3f {
             }
         });
 
-        engine.register_fn("set_tile", |loc: ScriptVec3i, tile: Tile| {
+        engine.register_fn("set_tile", |loc: ScriptVec3i, mut tile: Tile| {
+            tile.build_aabb();
             WORLD.lock().unwrap().set_tile(loc.v, tile);
             WORLD.lock().unwrap().needs_update = true;
         });
