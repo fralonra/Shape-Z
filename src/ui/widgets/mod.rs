@@ -7,6 +7,8 @@ pub mod palettebar;
 pub mod color_widget;
 pub mod switch_button;
 
+pub mod tool_extrusion;
+
 #[derive(Clone, Debug)]
 
 pub enum WidgetValue {
@@ -50,4 +52,10 @@ pub trait Widget : Sync + Send {
     fn touch_up(&mut self, _x: f32, _y: f32, context: &mut Context) -> bool {
         false
     }
+
+    // Only for Tools
+
+    fn set_shape(&mut self, shape: Shape) {
+    }
+
 }

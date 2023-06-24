@@ -14,6 +14,8 @@ pub mod prelude {
     pub use crate::ui::widgets::browser::*;
     pub use crate::ui::widgets::palettebar::*;
     pub use crate::ui::widgets::switch_button::*;
+
+    pub use crate::ui::widgets::tool_extrusion::*;
 }
 
 #[repr(usize)]
@@ -91,7 +93,7 @@ impl UI {
 
             toolbar_height          : 90,
             palettebar_width        : 162,
-            settings_width          : 200,
+            settings_width          : 300,
             browser_height          : 180,
         }
     }

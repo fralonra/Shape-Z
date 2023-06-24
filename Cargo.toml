@@ -17,8 +17,10 @@ lazy_static = "1.4.0"
 rust-embed = { version = "6.4.0", default-features = true, features = ["include-exclude"] }
 fontdue = "0.7.2"
 png = "0.17.8"
-rhai = { version = "1.13.0", default-features = true, features = ["only_i32", "f32_float", "sync"] }
+#rhai = { version = "1.13.0", default-features = true, features = ["only_i32", "f32_float", "sync"] }
 rand = "0.8.5"
+strum = "0.25"
+strum_macros = "0.25.0"
 
 [dependencies.uuid]
 version = "1.3.1"
@@ -43,6 +45,6 @@ copyright = "Copyright (c) Markus Moenig 2022. All rights reserved."
 category = "Game"
 short_description = "A procedural voxel editor."
 long_description = """
-A procedural voxel editor which will allow the creation of pixel art 
+A procedural voxel editor which will allow the creation of pixel art
 and realistic renderings based on script based tools which utilize SDF shapes.
 """

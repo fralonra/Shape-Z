@@ -268,7 +268,7 @@ impl ScriptVec3f {
 
         // Tile
 
-        Tile::register(engine);
+        //Tile::register(engine);
 
         engine.register_fn("get_tile", |loc: ScriptVec3i| -> Tile {
             if let Some(tile) = WORLD.lock().unwrap().get_tile(loc.v) {

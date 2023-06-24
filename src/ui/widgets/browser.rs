@@ -1,5 +1,4 @@
-
-use crate::{prelude::*, tool::ToolRole};
+use crate::prelude::*;
 
 #[derive(PartialEq, Debug, Clone)]
 enum Mode {
@@ -17,13 +16,13 @@ pub struct Browser {
     header_height       : usize,
 
     mode_widgets        : Vec<Box<dyn Widget>>,
-    tool_widgets        : Vec<Box<dyn Widget>>,
+    //tool_widgets        : Vec<Box<dyn Widget>>,
     navi_widgets        : Vec<Box<dyn Widget>>,
 
     // Tools
-    item_size           : (usize, usize),
-    content_rects       : Vec<Rect>,
-    ids                 : Vec<Uuid>,
+    //item_size           : (usize, usize),
+    //content_rects       : Vec<Rect>,
+    //ids                 : Vec<Uuid>,
 }
 
 impl Widget for Browser {
@@ -42,7 +41,7 @@ impl Widget for Browser {
         navigator_button.set_has_state(false);
         mode_widgets.push(navigator_button);
 
-        let tool_widgets : Vec<Box<dyn Widget>> = vec![];
+        //let tool_widgets : Vec<Box<dyn Widget>> = vec![];
 
         let mut navi_widgets : Vec<Box<dyn Widget>> = vec![];
 
@@ -66,21 +65,21 @@ impl Widget for Browser {
         navi_widgets.push(apply_tool_button);
 
         Self {
-            mode            : Mode::Tools,
+            mode            : Mode::Navigator,
 
             rect            : Rect::empty(),
 
             navigator       : Navigator::new(),
 
             mode_widgets,
-            tool_widgets,
+            // tool_widgets,
             navi_widgets,
 
             header_height   : 30,
 
-            item_size       : (120, 25),
-            content_rects   : vec![],
-            ids             : vec![],
+            // item_size       : (120, 25),
+            // content_rects   : vec![],
+            // ids             : vec![],
         }
     }
 
@@ -95,7 +94,7 @@ impl Widget for Browser {
         ctx.draw.rect(pixels, &(r.0 + r.2, r.1, 1, r.3), ctx.width, &context.color_black);
 
         r.3 = self.header_height;
-
+/* *
         ctx.draw.rect(pixels, &r, ctx.width, &context.color_toolbar);
         ctx.draw.rect(pixels, &(r.0, r.1 + r.3, r.2, 1), ctx.width, &context.color_black);
 
@@ -109,8 +108,8 @@ impl Widget for Browser {
         }
 
         ctx.draw.rect(pixels, &(r.0 + 220, r.1 + 4, 1, self.header_height - 8), ctx.width, &context.color_selected);
-
-        let start_x = r.0 + 230;
+*/
+        let start_x = r.0 + 10;
 
         // --- TOOLS / NAVI Widgets
 
@@ -132,7 +131,7 @@ impl Widget for Browser {
         if self.mode == Mode::Navigator {
             self.navigator.draw(pixels, context, world, ctx);
         } else {
-
+            /*
             self.content_rects = vec![];
             self.ids = vec![];
 
@@ -172,7 +171,7 @@ impl Widget for Browser {
                 } else {
                     r.1 += r.3;
                 }
-            }
+            }*/
         }
     }
 
@@ -245,6 +244,7 @@ impl Widget for Browser {
             }
 
             if self.mode == Mode::Tools {
+                /*
                 for (index, r) in self.content_rects.iter().enumerate() {
                     if r.is_inside((x as usize, y as usize)) {
                         if let Some(tool) = context.tools.get(&context.curr_tools[index]) {
@@ -253,7 +253,7 @@ impl Widget for Browser {
                             return true;
                         }
                     }
-                }
+                }*/
             } else
             if self.mode == Mode::Navigator {
                 if y as usize > self.rect.y + self.header_height {

@@ -13,13 +13,15 @@ pub mod camera;
 pub mod buffer;
 pub mod tile;
 pub mod palette;
-pub mod tool;
-pub mod script;
+// pub mod tool;
+// pub mod script;
 pub mod misc;
 pub mod pbr_path;
 pub mod material;
 pub mod material_preview;
 pub mod project;
+pub mod sdf;
+pub mod shape;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -52,13 +54,15 @@ pub mod prelude {
     pub use crate::buffer::ColorBuffer;
     pub use crate::tile::Tile;
     pub use crate::palette::Palette;
-    pub use crate::tool::Tool;
-    pub use crate::script::*;
+    // pub use crate::tool::Tool;
+    // pub use crate::script::*;
     pub use crate::misc::*;
     pub use crate::pbr_path::*;
     pub use crate::material::*;
     pub use crate::material_preview::MaterialPreview;
     pub use crate::project::*;
+    pub use crate::sdf::*;
+    pub use crate::shape::*;
 }
 
 use prelude::*;

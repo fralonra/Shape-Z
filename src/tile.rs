@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
-use rhai::{ Engine, FuncArgs };
-use std::iter::once;
+// use rhai::{ Engine, FuncArgs };
+// use std::iter::once;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Tile {
@@ -366,6 +366,7 @@ impl Tile {
         self.aabb = None;
     }
 
+    /*
     /// Set the voxel at the given position
     pub fn set_voxel_script(&mut self, loc: ScriptVec3i, color_value: i32, material_value: i32) {
         self.set_voxel(loc.v.x as usize, loc.v.y as usize, loc.v.z as usize, Some((color_value as u8, material_value as u8)));
@@ -412,11 +413,14 @@ impl Tile {
             .register_fn("clear_at", Tile::clear_voxel_script)
             .register_fn("clear_all", Tile::clear_all);
     }
+    */
 
 }
 
+/*
 impl FuncArgs for Tile {
     fn parse<C: Extend<rhai::Dynamic>>(self, container: &mut C) {
         container.extend(once(rhai::Dynamic::from(self)));
     }
 }
+*/

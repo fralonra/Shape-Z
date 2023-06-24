@@ -7,8 +7,6 @@ pub struct World {
 
     pub project             : Project,
     pub needs_update        : bool,
-
-    pub curr_tool           : Tool,
 }
 
 impl World {
@@ -24,8 +22,6 @@ impl World {
 
             project,
             needs_update    : true,
-
-            curr_tool       : Tool::new("".into()),
         }
     }
 
@@ -39,7 +35,8 @@ impl World {
     }
 
     /// Set a tile
-    pub fn set_tile(&mut self, at: Vec3i, tile: Tile) {
+    pub fn set_tile(&mut self, at: Vec3i, mut tile: Tile) {
+        tile.build_aabb();
         self.project.tiles.insert((at.x, at.y, at.z), tile);
     }
 
@@ -463,6 +460,75 @@ impl World {
         } else {
             None
         }*/
+    }
+
+    /// Apply the given shape
+
+    pub fn apply(&mut self, key: Vec3i, tile_key: Vec3i, tiles: &Vec<Vec3i>) {
+        //let wc = self.to_world_coord(key, tile_key);
+
+        //let shape = Shape::new();
+
+        let hp: Vec3<f32> = self.to_world_coord(key, tile_key);
+
+        for tile_key in tiles {
+            if let Some(mut tile) = self.get_tile(*tile_key) {
+
+                let size = tile.size;
+
+                for y in 0..size {
+                    for x in 0..size {
+                        for z in 0..size {
+                            let pos = self.to_world_coord(*tile_key, vec3i(x as i32, y as i32, z as i32));
+
+                            /*
+
+                            let p = pos - vec3f(0.0, 0.2, 0.0) - hp; let b = vec3f(0.2, 0.2, 0.2);
+                            let q = abs(p) - b;
+                            let d1 = length(max(q,vec3f(0.0, 0.0, 0.0))) + min(max(q.x,max(q.y,q.z)),0.0);
+                            if d1 < 0.0 {
+                                tile.set_voxel(x, y, z, Some((10, 10)));
+                            }*/
+
+                            let p = abs(pos.xy() - vec2f(0.0, 0.3) - hp.xy()) - vec2f(0.2, 0.2);
+                            let mut d = length(max(p,Vec2f::new(0.0, 0.0))) + min(max(p.x,p.y),0.0);
+
+                            d = abs(d) - 0.05;
+
+                            let h = 0.2;
+                            let w = vec2f( d, abs(pos.z - hp.z) - h );
+                            d = min(max(w.x,w.y),0.0) + length(max(w,vec2f(0.0, 0.0)));
+
+                            if d < 0.0 {
+                                tile.set_voxel(x, y, z, Some((10, 10)));
+                            }
+                        }
+                    }
+                }
+
+                self.set_tile(*tile_key, tile);
+            }
+        }
+
+        self.needs_update = true;
+    }
+
+    /// Converts the hit keys to a world coordinate
+    pub fn to_world_coord(&self, key: Vec3i, tile_key: Vec3i) -> Vec3f {
+        let mut wc = Vec3f::from(key);
+
+        wc.x += tile_key.x as f32 / 100.0;
+        wc.y += tile_key.y as f32 / 100.0;
+        wc.z += tile_key.z as f32 / 100.0;
+
+        wc
+    }
+
+    /// Converts the world coordinate to hit keys
+    pub fn to_tile_coord(&self, wc: Vec3f) -> (Vec3i, Vec3i) {
+        let key = Vec3i::new(wc.x as i32, wc.y as i32, wc.z as i32);
+        let tile_key = Vec3i::new((frac(wc.x) * 100.0) as i32, (frac(wc.y) * 100.0) as i32, (frac(wc.z) * 100.0) as i32);
+        (key, tile_key)
     }
 
     /// Gets the current time in milliseconds

@@ -6,7 +6,7 @@ use std::sync::Mutex;
 
 lazy_static! {
     pub static ref WORLD : Mutex<World> = Mutex::new(World::new());
-    // pub static ref WORLD : Mutex<World> = Mutex::new(World::new());
+    pub static ref TOOL : Mutex<Box<dyn Widget>> = Mutex::new(Box::new(ExtrusionTool::new()));
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -152,17 +152,19 @@ impl TheTrait for Editor {
             let hit = WORLD.lock().unwrap().hit_at(self.to_world(vec2f(x, y)), &self.buffer, self.context.iso_state);
 
             if let Some(mut hit) = hit {
-                self.context.curr_keys = vec!(hit.key);
+                //self.context.curr_keys = vec!(hit.key);
                 hit.compute_side();
-                WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
-                self.context.curr_tool.hit(&self.context.engine, hit);
+                //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
+                //self.context.curr_tool.hit(&self.context.engine, hit);
+                WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
                 consumed = true;
             } else {
+                /*
                 if self.context.curr_keys.is_empty() == false {
                     self.context.curr_keys = vec![];
                     WORLD.lock().unwrap().needs_update = true;
                     consumed = true;
-                }
+                }*/
             }
 
             return consumed;
@@ -238,6 +240,7 @@ impl MyEditor for Editor {
             match cmd {
                 Command::ColorIndexChanged(index) => {
                     self.context.curr_color_index = *index;
+                    /*
                     for (w_index, v) in self.context.curr_tool.widget_values.clone().iter().enumerate() {
                         match v {
                             WidgetValue::Color(name, _i) => {
@@ -245,9 +248,10 @@ impl MyEditor for Editor {
                             },
                             _ => {},
                         }
-                    }
+                    }*/
                 },
-                Command::MaterialIndexChanged(index) => {
+                Command::MaterialIndexChanged(_index) => {
+                    /*
                     self.context.curr_material_index = *index;
                     for (w_index, v) in self.context.curr_tool.widget_values.clone().iter().enumerate() {
                         match v {
@@ -256,7 +260,7 @@ impl MyEditor for Editor {
                             },
                             _ => {},
                         }
-                    }
+                    }*/
                 },
                 Command::EditStateSwitched => {
                     self.context.edit_state = self.ui.get_edit_state();
@@ -310,8 +314,9 @@ impl MyEditor for Editor {
                     }
                 },
                 Command::ApplyTool => {
-                    WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
-                    self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
+                    //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
+                    //self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
+                    //WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
                 }
                 _ => {}
             }

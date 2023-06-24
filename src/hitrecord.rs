@@ -1,6 +1,14 @@
 use crate::prelude::*;
-use rhai::{ Engine, FuncArgs };
-use std::iter::once;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum SideEnum {
+    Top,
+    Bottom,
+    Left,
+    Right,
+    Front,
+    Back
+}
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct HitRecord {
@@ -49,6 +57,7 @@ impl HitRecord {
         }
     }
 
+    /*
     pub fn get_hitpoint(&mut self) -> ScriptVec3f {
         ScriptVec3f::from_vec3f(self.hitpoint)
     }
@@ -63,7 +72,7 @@ impl HitRecord {
 
     pub fn get_normal(&mut self) -> ScriptVec3f {
         ScriptVec3f::from_vec3f(self.normal)
-    }
+    }*/
 
     // pub fn get_value(&mut self) -> i32 {
     //     self.value as i32
@@ -73,6 +82,7 @@ impl HitRecord {
         self.side.clone()
     }
 
+    /*
     /// Register to the engine
     pub fn register(engine: &mut Engine) {
         engine.register_type_with_name::<HitRecord>("HitRecord")
@@ -82,11 +92,12 @@ impl HitRecord {
             .register_get("normal", HitRecord::get_normal)
             //.register_get("value", HitRecord::get_value)
             .register_get("side", HitRecord::get_side);
-    }
+    }*/
 }
 
+/*
 impl FuncArgs for HitRecord {
     fn parse<C: Extend<rhai::Dynamic>>(self, container: &mut C) {
         container.extend(once(rhai::Dynamic::from(self)));
     }
-}
+}*/

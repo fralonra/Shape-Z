@@ -1,4 +1,4 @@
-use crate::{prelude::*, tool::ToolRole};
+use crate::prelude::*;
 use fontdue::Font;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -35,9 +35,11 @@ pub struct Context {
     pub curr_tile               : Tile,
     pub curr_keys               : Vec<Vec3i>,
 
+    /*
     pub curr_tool               : Tool,
     pub curr_tool_role          : ToolRole,
     pub curr_tools              : Vec<String>,
+    */
 
     pub cmd                     : Option<Command>,
 
@@ -52,8 +54,8 @@ pub struct Context {
 
     // Tools
 
-    pub engine                  : rhai::Engine,
-    pub tools                   : FxHashMap<String, Tool>,
+    //pub engine                  : rhai::Engine,
+    //pub tools                   : FxHashMap<String, Tool>,
 
     // Current Color & Material
 
@@ -67,11 +69,11 @@ impl Context {
 
         let mut palette = Palette::new();
 
-        let mut curr_tool = Tool::new("".into());
-        let mut curr_tools = vec![];
+        //let mut curr_tool = Tool::new("".into());
+        //let mut curr_tools = vec![];
 
-        let mut tools : FxHashMap<String, Tool> = FxHashMap::default();
-        let mut engine = setup_engine();
+        //let mut tools : FxHashMap<String, Tool> = FxHashMap::default();
+        //let mut engine = setup_engine();
 
         // Load Font
 
@@ -103,6 +105,7 @@ impl Context {
                     }
                 }
             } else
+            /*
             if name.starts_with("tools/") {
                 if let Some(bytes) = Embedded::get(name) {
                     if let Some(string) = std::str::from_utf8(bytes.data.as_ref()).ok() {
@@ -122,7 +125,7 @@ impl Context {
                         tools.insert(name, tool);
                     }
                 }
-            } else {
+            } else*/ {
                 if name == "aurora.txt" {
                     if let Some(bytes) = Embedded::get(name) {
                         if let Some(string) = std::str::from_utf8(bytes.data.as_ref()).ok() {
@@ -174,12 +177,13 @@ impl Context {
             color_black         : [0, 0, 0, 255],
 
             curr_tile           : Tile::new(9),
+
+            /*
+            curr_tool,
             curr_tool_role      : ToolRole::Voxel,
+            curr_tools,*/
 
             curr_keys           : vec![],
-
-            curr_tool,
-            curr_tools,
 
             cmd                 : None,
 
@@ -192,8 +196,8 @@ impl Context {
             edit_state          : true,
             iso_state           : false,
 
-            engine,
-            tools,
+            //engine,
+            //tools,
 
             curr_color_index    : 0,
             curr_material_index : 0,

@@ -1,10 +1,15 @@
 
-use crate::prelude::*;
+use crate::{prelude::*, editor::TOOL};
 
 pub struct Settings {
     rect                        : Rect,
 
+    buffer                      : Vec<u8>,
+    dirty                       : bool,
+
     widgets                     : Vec<Box<dyn Widget>>,
+
+    prim2d_previews             : Vec<u8>,
 
     pub tile_needs_update       : bool,
 }
@@ -14,6 +19,7 @@ impl Widget for Settings {
     fn new() -> Self {
         let widgets : Vec<Box<dyn Widget>> = vec![];
 
+        let prim2d_previews = create_shape_previews();
         /*
         let mut clear_button = Box::new(TextButton::new());
         clear_button.set_text("Clear".into());
@@ -55,7 +61,12 @@ impl Widget for Settings {
         Self {
             rect                : Rect::empty(),
 
+            buffer              : vec![],
+            dirty               : true,
+
             widgets,
+
+            prim2d_previews,
 
             tile_needs_update   : false,
         }
@@ -67,87 +78,136 @@ impl Widget for Settings {
 
     fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
 
-        let r = self.rect.to_usize();
-        ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
-        ctx.draw.rect(pixels, &(r.0, r.1, r.2, 2), ctx.width, &[0, 0, 0, 255]);
+        if self.buffer.len() != self.rect.width * self.rect.height * 4 {
+            self.buffer = vec![0; self.rect.width * self.rect.height * 4];
+            self.dirty = true;
+        }
 
-        let x =  r.0 + 15;
-        let mut y =  r.1 + 10;
+        if self.dirty {
 
-        for v in &context.curr_tool.widget_values {
-            match v {
-                WidgetValue::Color(name, index) => {
-                    ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
-                    y += 20;
-                    ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
-                },
-                WidgetValue::Material(name, index) => {
-                    ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
-                    y += 20;
-                    ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
+            let mut r = self.rect.to_usize();
+            r.0 = 0;
+            r.1 = 0;
+
+            let buffer = &mut self.buffer;
+            let stride = self.rect.width;
+
+            ctx.draw.rect(buffer, &r, stride, &context.color_widget);
+            ctx.draw.rect(buffer, &(r.0, r.1, r.2, 2), stride, &[0, 0, 0, 255]);
+
+            let tool_rect = Rect::new(40, 2, self.rect.width - 40, self.rect.height);
+
+            let mut tool = TOOL.lock().unwrap();
+            tool.set_rect(tool_rect);
+            tool.draw(buffer, context, world, ctx);
+
+            /*
+            let size = 200;
+
+            for y in 0..size {
+                for x in 0..size {
+                    let d = abs(vec2f(x as f32, y as f32) - vec2f(100.0, 100.0)) - vec2f(100.0, 100.0);
+                    let mut d = length(max(d,Vec2f::new(0.0, 0.0))) + min(max(d.x,d.y),0.0);
+
+                    d = abs(d) - 50.0;
+
+                    let mut c: [u8; 4] = [0, 0, 0, 255];
+                    if d < 0.0 {
+
+                        if d as i32 % 4 == 0 {
+                            c[0] = 255;
+                        }
+                    }
+
+                    ctx.draw.rect(pixels, &(r.0 + 20 + x, r.1 + 20 + y, 2, 2), ctx.width, &c);
                 }
-            };
-        }
+            }*/
 
-        /*
-        if context.curr_key.is_none() { return; }
+            let prev_rect = Rect::new(r.0, r.1, 40, 40);
+            ctx.draw.copy_slice(buffer, &self.prim2d_previews, &prev_rect.to_usize(), stride);
 
-        let tile_size = r.2 - 20;
+            /*
+            let x =  r.0 + 15;
+            let mut y =  r.1 + 10;
 
-        if tile_size != self.buffer.width || tile_size != self.buffer.height {
-            self.buffer = ColorBuffer::new(tile_size, tile_size);
-            self.tile_needs_update = true;
-        }
-
-        if self.tile_needs_update {
-            context.curr_tile.render(&mut self.buffer);
-            self.tile_needs_update = false;
-        }
-        self.buffer.convert_to_u8_at(pixels, (r.0 + 10, r.1 + 10, ctx.width, ctx.height));
-        self.voxels_r = Rect::new(r.0 + 10, r.1 + 10, tile_size, tile_size);*/
-        /*
-        // Property
-
-        let mut pr = (x, y, pixel_size, pixel_size);
-
-        for y in 0..property_dim {
-            for x in 0..property_dim {
-
-                let v = context.curr_property().get(x, y);
-
-                let color: [u8; 4] = if v == 0 { context.color_selected } else {
-                    if context.curr_property == Props::Shape {
-                        context.color_text
-                    } else {
-                        context.palette.palette[v as usize]
+            for v in &context.curr_tool.widget_values {
+                match v {
+                    WidgetValue::Color(name, index) => {
+                        ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
+                        y += 20;
+                        ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
+                    },
+                    WidgetValue::Material(name, index) => {
+                        ctx.draw.text(pixels, &(x, y), ctx.width, &context.font.as_ref().unwrap(), 16.0, name, &context.color_text, &context.color_widget);
+                        y += 20;
+                        ctx.draw.rect(pixels, &(x, y, 160, 20), ctx.width, &context.palette.at(*index));
                     }
                 };
+            }*/
 
-                context.draw2d.draw_rect(pixels, &pr, context.width, &color);
+            /*
+            if context.curr_key.is_none() { return; }
 
-                pr.0 += pixel_size + 1;
+            let tile_size = r.2 - 20;
+
+            if tile_size != self.buffer.width || tile_size != self.buffer.height {
+                self.buffer = ColorBuffer::new(tile_size, tile_size);
+                self.tile_needs_update = true;
             }
-            pr.0 = x;
-            pr.1 += pixel_size + 1;
+
+            if self.tile_needs_update {
+                context.curr_tile.render(&mut self.buffer);
+                self.tile_needs_update = false;
+            }
+            self.buffer.convert_to_u8_at(pixels, (r.0 + 10, r.1 + 10, ctx.width, ctx.height));
+            self.voxels_r = Rect::new(r.0 + 10, r.1 + 10, tile_size, tile_size);*/
+            /*
+            // Property
+
+            let mut pr = (x, y, pixel_size, pixel_size);
+
+            for y in 0..property_dim {
+                for x in 0..property_dim {
+
+                    let v = context.curr_property().get(x, y);
+
+                    let color: [u8; 4] = if v == 0 { context.color_selected } else {
+                        if context.curr_property == Props::Shape {
+                            context.color_text
+                        } else {
+                            context.palette.palette[v as usize]
+                        }
+                    };
+
+                    context.draw2d.draw_rect(pixels, &pr, context.width, &color);
+
+                    pr.0 += pixel_size + 1;
+                }
+                pr.0 = x;
+                pr.1 += pixel_size + 1;
+            }
+
+            self.prop_r = Rect::new(x as u32, y as u32, available_width as u32, available_width as u32);
+            self.prop_pixel_size = pixel_size + 1;
+
+            // Widgets
+
+            self.widgets[0].set_rect(Rect::new(self.rect.x + 10, self.rect.y + 240, 70, 20));
+
+            self.widgets[1].set_rect(Rect::new(self.rect.x + 10, self.rect.y + 275, 70, 20));
+            self.widgets[2].set_rect(Rect::new(self.rect.x + 10 + 78, self.rect.y + 275, 70, 20));
+            self.widgets[3].set_rect(Rect::new(self.rect.x + 10, self.rect.y + 275 + 25, 70, 20));
+            self.widgets[4].set_rect(Rect::new(self.rect.x + 10 + 78, self.rect.y + 275 + 25, 70, 20));
+            self.widgets[5].set_rect(Rect::new(self.rect.x + 10 + 78 * 2, self.rect.y + 275 + 25, 70, 20));
+            */
+
+            for w in &mut self.widgets {
+                w.draw(buffer, context, world, ctx);
+            }
+
+            self.dirty = false;
         }
-
-        self.prop_r = Rect::new(x as u32, y as u32, available_width as u32, available_width as u32);
-        self.prop_pixel_size = pixel_size + 1;
-
-        // Widgets
-
-        self.widgets[0].set_rect(Rect::new(self.rect.x + 10, self.rect.y + 240, 70, 20));
-
-        self.widgets[1].set_rect(Rect::new(self.rect.x + 10, self.rect.y + 275, 70, 20));
-        self.widgets[2].set_rect(Rect::new(self.rect.x + 10 + 78, self.rect.y + 275, 70, 20));
-        self.widgets[3].set_rect(Rect::new(self.rect.x + 10, self.rect.y + 275 + 25, 70, 20));
-        self.widgets[4].set_rect(Rect::new(self.rect.x + 10 + 78, self.rect.y + 275 + 25, 70, 20));
-        self.widgets[5].set_rect(Rect::new(self.rect.x + 10 + 78 * 2, self.rect.y + 275 + 25, 70, 20));
-        */
-
-        for w in &mut self.widgets {
-            w.draw(pixels, context, world, ctx);
-        }
+        ctx.draw.copy_slice(pixels, &self.buffer, &self.rect.to_usize(), ctx.width);
 
     }
 

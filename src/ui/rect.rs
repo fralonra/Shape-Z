@@ -51,4 +51,8 @@ impl Rect {
     pub fn to_usize(&self) -> (usize, usize, usize, usize) {
         (self.x as usize, self.y as usize, self.width as usize, self.height as usize)
     }
+
+    pub fn alloc(&self) -> Vec<u8> {
+        vec![0; self.width * self.height * 4]
+    }
 }
