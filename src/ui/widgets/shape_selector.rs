@@ -1,25 +1,27 @@
-
 use crate::prelude::*;
 
-pub struct ColorWidget {
-    rect                : Rect,
-
-    text                : String,
-
-    cmd                 : Option<Command>,
-
-    clicked             : bool,
+pub enum ShapeSelectorMode {
+    SDF
 }
 
-impl Widget for ColorWidget {
+pub struct ShapeSelector {
+    rect                        : Rect,
+
+    sdf_previews                : (Vec<u8>, Rect),
+    sdf_index                   : Option<usize>
+}
+
+impl Widget for ShapeSelector {
 
     fn new() -> Self {
 
+        let sdf_previews = create_shape_previews();
+
         Self {
-            rect        : Rect::empty(),
-            text        : "".to_string(),
-            cmd         : None,
-            clicked     : false,
+            rect                : Rect::empty(),
+
+            sdf_previews,
+            sdf_index           : None,
         }
     }
 
@@ -27,16 +29,14 @@ impl Widget for ColorWidget {
         self.rect = rect;
     }
 
-    fn set_text(&mut self, text: String) {
-        self.text = text;
-    }
+    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
 
-    fn set_cmd(&mut self, cmd: Command) {
-        self.cmd = Some(cmd);
-    }
+        let r = self.rect.to_usize();
 
-    fn draw(&mut self, _pixels: &mut [u8], _context: &mut Context, _world: &World, _ctx: &TheContext) {
+        let prev_rect = Rect::new(r.0, r.1, self.sdf_previews.1.width, self.sdf_previews.1.height);
+        ctx.draw.rect(pixels, &r, ctx.width, &context.color_toolbar);
 
+        ctx.draw.copy_slice(pixels, &self.sdf_previews.0, &prev_rect.to_usize(), ctx.width);
         /*
         let color: [u8; 4] = if !self.clicked && !self.state { context.color_selected } else { context.color_button };
 
@@ -57,12 +57,6 @@ impl Widget for ColorWidget {
     }
 
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
-
-        if self.rect.is_inside((x as usize, y as usize)) {
-            context.cmd = self.cmd.clone();
-            return true;
-        }
-
         false
     }
 
@@ -74,10 +68,6 @@ impl Widget for ColorWidget {
     }*/
 
     fn touch_up(&mut self, _x: f32, _y: f32, _context: &mut Context) -> bool {
-        if self.clicked {
-            self.clicked = false;
-            return true;
-        }
         false
     }
 }

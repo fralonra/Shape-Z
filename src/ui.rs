@@ -14,6 +14,7 @@ pub mod prelude {
     pub use crate::ui::widgets::browser::*;
     pub use crate::ui::widgets::palettebar::*;
     pub use crate::ui::widgets::switch_button::*;
+    pub use crate::ui::widgets::shape_selector::*;
 
     pub use crate::ui::widgets::tool_extrusion::*;
 }
@@ -23,6 +24,7 @@ enum WidgetIndices {
     SettingsIndex,
     BrowserIndex,
     ModeBarIndex,
+    ShapeSelectorIndex,
 }
 
 #[repr(usize)]
@@ -49,6 +51,7 @@ pub struct UI {
     pub palettebar_width            : usize,
     pub settings_width              : usize,
     pub browser_height              : usize,
+    pub shape_selector_width        : usize,
 }
 
 impl UI {
@@ -67,6 +70,10 @@ impl UI {
 
         let palette: Box<PaletteBar> = Box::new(PaletteBar::new());
         widgets.push(palette);
+
+        let shape_selector: Box<ShapeSelector> = Box::new(ShapeSelector::new());
+        widgets.push(shape_selector);
+
 
         // Toolbar Widgets
 
@@ -93,8 +100,9 @@ impl UI {
 
             toolbar_height          : 90,
             palettebar_width        : 162,
-            settings_width          : 300,
+            settings_width          : 250,
             browser_height          : 180,
+            shape_selector_width    : 40
         }
     }
 
@@ -137,13 +145,19 @@ impl UI {
 
         ctx.draw.copy_slice(pixels, &self.toolbar_buffer, &self.toolbar_rect.to_usize(), ctx.width);
 
-        // Settings rect
+        // --- Settings rect
 
         let settings_rect = Rect::new(context.width - self.settings_width, self.toolbar_height, self.settings_width, context.height - self.toolbar_height);
 
         self.widgets[SettingsIndex as usize].set_rect(settings_rect.clone());
 
-        // --- ModeBar
+        // --- ShapeSelector
+
+        let shape_selector_rect = Rect::new(context.width - self.settings_width - self.shape_selector_width, self.toolbar_height, self.shape_selector_width, context.height - self.toolbar_height - self.browser_height);
+
+        self.widgets[ShapeSelectorIndex as usize].set_rect(shape_selector_rect.clone());
+
+        // --- PaletteBar
 
         let modebar_rect: Rect = Rect::new(0, self.toolbar_height, self.palettebar_width, ctx.height - self.toolbar_height);
 

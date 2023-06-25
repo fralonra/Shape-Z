@@ -70,7 +70,7 @@ impl Ray {
 use strum::IntoEnumIterator;
 
 /// Create the previews for the 2D primitives
-pub fn create_shape_previews() -> Vec<u8> {
+pub fn create_shape_previews() -> (Vec<u8>, Rect) {
      let amount = SDFType::iter().len();
 
     let size = 40;
@@ -83,5 +83,5 @@ pub fn create_shape_previews() -> Vec<u8> {
         rect.y += size;
     }
 
-    buff
+    (buff, Rect::new(0, 0, size, size * amount))
 }

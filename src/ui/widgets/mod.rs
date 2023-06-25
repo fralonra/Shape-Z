@@ -4,7 +4,7 @@ pub mod text_button;
 pub mod settings;
 pub mod browser;
 pub mod palettebar;
-pub mod color_widget;
+pub mod shape_selector;
 pub mod switch_button;
 
 pub mod tool_extrusion;
@@ -56,6 +56,9 @@ pub trait Widget : Sync + Send {
     // Only for Tools
 
     fn set_shape(&mut self, shape: Shape) {
+    }
+
+    fn hit(&mut self, hit: HitRecord, tiles: &Vec<Vec3i>) {
     }
 
 }

@@ -60,7 +60,7 @@ impl TheTrait for Editor {
         //println!("update {}", self.path_iter);
 
         // Make sure world has the correct size
-        let world_width = ctx.width - self.ui.settings_width -  self.ui.palettebar_width;
+        let world_width = ctx.width - self.ui.settings_width -  self.ui.palettebar_width - self.ui.shape_selector_width;
         let world_height = ctx.height - self.ui.browser_height - self.ui.toolbar_height;
 
         if self.buffer.width != world_width|| self.buffer.height != world_height {
@@ -156,7 +156,10 @@ impl TheTrait for Editor {
                 hit.compute_side();
                 //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
                 //self.context.curr_tool.hit(&self.context.engine, hit);
-                WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
+                //WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
+                //WORLD.lock().unwrap().apply_tool_hit(hit, &self.context.curr_keys);
+                let mut tool = TOOL.lock().unwrap();
+                tool.hit(hit, &self.context.curr_keys);
                 consumed = true;
             } else {
                 /*

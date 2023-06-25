@@ -91,6 +91,6 @@ impl Project {
 
     /// The project tile size
     pub fn tile_size() -> usize {
-        100
+        49
     }
 }

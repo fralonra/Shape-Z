@@ -9,8 +9,6 @@ pub struct Settings {
 
     widgets                     : Vec<Box<dyn Widget>>,
 
-    prim2d_previews             : Vec<u8>,
-
     pub tile_needs_update       : bool,
 }
 
@@ -19,7 +17,6 @@ impl Widget for Settings {
     fn new() -> Self {
         let widgets : Vec<Box<dyn Widget>> = vec![];
 
-        let prim2d_previews = create_shape_previews();
         /*
         let mut clear_button = Box::new(TextButton::new());
         clear_button.set_text("Clear".into());
@@ -66,8 +63,6 @@ impl Widget for Settings {
 
             widgets,
 
-            prim2d_previews,
-
             tile_needs_update   : false,
         }
     }
@@ -95,7 +90,7 @@ impl Widget for Settings {
             ctx.draw.rect(buffer, &r, stride, &context.color_widget);
             ctx.draw.rect(buffer, &(r.0, r.1, r.2, 2), stride, &[0, 0, 0, 255]);
 
-            let tool_rect = Rect::new(40, 2, self.rect.width - 40, self.rect.height);
+            let tool_rect = Rect::new(0, 2, self.rect.width, self.rect.height);
 
             let mut tool = TOOL.lock().unwrap();
             tool.set_rect(tool_rect);
@@ -122,9 +117,6 @@ impl Widget for Settings {
                     ctx.draw.rect(pixels, &(r.0 + 20 + x, r.1 + 20 + y, 2, 2), ctx.width, &c);
                 }
             }*/
-
-            let prev_rect = Rect::new(r.0, r.1, 40, 40);
-            ctx.draw.copy_slice(buffer, &self.prim2d_previews, &prev_rect.to_usize(), stride);
 
             /*
             let x =  r.0 + 15;

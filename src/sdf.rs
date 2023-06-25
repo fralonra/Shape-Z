@@ -5,6 +5,7 @@ use strum_macros::EnumIter;
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, EnumIter)]
 pub enum SDFType {
     Box,
+    Circle
 }
 
 use SDFType::*;
@@ -13,7 +14,8 @@ use SDFType::*;
 pub struct SDF {
     sdf_type                    : SDFType,
 
-    pub position                : Vec3f,
+    pub position                : Vec2f,
+    pub size                    : Vec2f,
 }
 
 impl SDF {
@@ -21,8 +23,21 @@ impl SDF {
         Self {
             sdf_type,
 
-            position            : Vec3f::zero(),
+            position            : Vec2f::new(0.5, 0.5),
+            size                : Vec2f::new(0.4, 0.4),
         }
+    }
+
+    pub fn distance(&self, p: Vec2f) -> f32 {
+        let mut d = std::f32::MAX;
+        if self.sdf_type == Box {
+            let q = abs(p - self.position) - self.size;
+            d = length(max(q,Vec2f::new(0.0, 0.0))) + min(max(q.x,q.y),0.0);
+        } else
+        if self.sdf_type == Circle {
+            d = length(p - self.position) - self.size.x;
+        }
+        d
     }
 
     pub fn apply(&self, key: Vec3i, tile_key: Vec3i) {
@@ -92,6 +107,16 @@ impl SDF {
                     let q = abs(vec2f(x as f32, y as f32) - vec2f(half, half)) - vec2f(size, size);
                     let d = length(max(q,Vec2f::new(0.0, 0.0))) + min(max(q.x,q.y),0.0);
 
+                    pixels[i..i + 4].copy_from_slice(&shade(d));
+                }
+            }
+        } else
+        if self.sdf_type == Circle {
+            let size = half - 5.0;
+            for y in rect.y..rect.y + rect.height {
+                for x in rect.x..rect.x + rect.width {
+                    let i = x * 4 + y * stride * 4;
+                    let d = length(vec2f(x as f32, y as f32 - rect.y as f32) - vec2f(half, half)) - size;
                     pixels[i..i + 4].copy_from_slice(&shade(d));
                 }
             }

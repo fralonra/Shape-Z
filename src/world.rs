@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, editor::TOOL};
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 use rand::{thread_rng, Rng, rngs::ThreadRng};
 
@@ -461,6 +461,7 @@ impl World {
             None
         }*/
     }
+
 
     /// Apply the given shape
 

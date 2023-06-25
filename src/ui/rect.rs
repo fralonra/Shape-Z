@@ -53,6 +53,6 @@ impl Rect {
     }
 
     pub fn alloc(&self) -> Vec<u8> {
-        vec![0; self.width * self.height * 4]
+        vec![0; self.width * self.height * 4 * 2]
     }
 }
