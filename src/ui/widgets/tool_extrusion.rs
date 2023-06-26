@@ -5,16 +5,33 @@ pub struct ExtrusionTool {
     rect                    : Rect,
 
     shape                   : Shape,
+
+    size_widget             : Box<dyn Widget>,
+
+    curr_sdf_index          : Option<usize>,
+    sdf_rects               : Vec<Rect>,
 }
 
 impl Widget for ExtrusionTool {
 
     fn new() -> Self {
 
-        Self {
-            rect        : Rect::empty(),
+        let shape = Shape::new();
 
-            shape       : Shape::new()
+        let mut size_widget = Box::new(IntSlider::new());
+        size_widget.set_text("Size: ".to_string());
+        size_widget.set_range(1, 200);
+        size_widget.set_value(shape.size);
+
+        Self {
+            rect           : Rect::empty(),
+
+            shape,
+
+            size_widget,
+
+            curr_sdf_index  : Some(0),
+            sdf_rects       : vec![Rect::empty(); 5]
         }
     }
 
@@ -22,11 +39,57 @@ impl Widget for ExtrusionTool {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, world: &World, ctx: &TheContext) {
 
         let stride = self.rect.width;
-        let shape_rect = Rect::new(self.rect.x, self.rect.y, self.rect.width, self.rect.width);
+        let shape_width = self.rect.width - 80;
+        let shape_rect = Rect::new(self.rect.x, self.rect.y + 22, shape_width, shape_width);
         self.shape.draw(pixels, shape_rect, stride, context, ctx);
+
+        if let Some(font) = &context.font {
+            ctx.draw.blend_text_rect(pixels, &(self.rect.x + 10, self.rect.y, shape_width, 20), stride, &font, 15.0, &"EXTRUDE TOOL".to_string(), &context.color_text, theframework::thedraw2d::TheTextAlignment::Left)
+        }
+
+        // Size Widget
+
+        let size_rect = Rect::new(self.rect.x + 10, self.rect.y + 200, 200, 24);
+        self.size_widget.set_rect(size_rect);
+        self.size_widget.draw(pixels, stride, context, world, ctx);
+
+        // SDFs
+
+        let mut sdf_rect = Rect::new(self.rect.x + 10, self.rect.y + 240, 40, 40);
+        for (index, s) in self.shape.sdf.iter().enumerate() {
+            if let Some(sdf) = s {
+                sdf.create_preview(pixels, sdf_rect, stride);
+            } else {
+                ctx.draw.rounded_rect(pixels, &sdf_rect.to_usize(), stride, &context.color_black, &(6.0, 6.0, 6.0, 6.0));
+            }
+            if Some(index) == self.curr_sdf_index {
+                ctx.draw.rounded_rect_with_border(pixels, &sdf_rect.to_usize(), stride, &[0, 0, 0, 0], &(6.0, 6.0, 6.0, 6.0), &context.color_white, 2.0);
+            }
+
+            self.sdf_rects[index] = sdf_rect.clone();
+            sdf_rect.x += 45;
+        }
+
+        // Modifiers
+
+        //let mut modifier_rect = Rect::new(self.rect.x + 50, self.rect.y + 280, 40, 40);
+        /*
+        for (index, s) in self.shape.sdf.iter().enumerate() {
+            if let Some(sdf) = s {
+                sdf.create_preview(pixels, modifier_rect, stride);
+            } else {
+                ctx.draw.rounded_rect(pixels, &modifier_rect.to_usize(), stride, &context.color_black, &(6.0, 6.0, 6.0, 6.0));
+            }
+            if Some(index) == self.curr_sdf_index {
+                ctx.draw.rounded_rect_with_border(pixels, &modifier_rect.to_usize(), stride, &[0, 0, 0, 0], &(6.0, 6.0, 6.0, 6.0), &context.color_white, 2.0);
+            }
+
+            self.sdf_rects[index] = modifier_rect.clone();
+            modifier_rect.x += 45;
+        }*/
 
         /*
         let color: [u8; 4] = if self.clicked || self.state { context.color_selected } else { context.color_button };
@@ -47,30 +110,47 @@ impl Widget for ExtrusionTool {
         }
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, world: &World) -> bool {
 
-        /*
-        if self.rect.is_inside((x as usize, y as usize)) {
-            context.cmd = self.cmd.clone();
-            if self.has_state {
-                self.state = !self.state;
-            } else {
-                self.clicked = true;
+        let lx = x as usize - self.rect.x;
+        let ly = y as usize - self.rect.y;
+
+        if self.rect.is_inside((lx, ly)) {
+
+            if self.size_widget.contains(x, y) {
+                if self.size_widget.touch_down(x, y, context, world) {
+                    self.shape.size = self.size_widget.get_value();
+                    return true;
+                }
             }
-            return true;
-        }*/
+
+            // SDF ?
+            for (index, s) in self.sdf_rects.iter().enumerate() {
+                if s.is_inside((lx, ly)) {
+                    self.curr_sdf_index = Some(index);
+                    return true;
+                }
+            }
+        }
 
         false
     }
 
-    /*
     fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
+        if self.size_widget.touch_dragged(x, y, context) {
+            self.shape.size = self.size_widget.get_value();
+            return true;
+        }
 
-        true
-    }*/
+        false
+    }
 
-    fn touch_up(&mut self, _x: f32, _y: f32, _context: &mut Context) -> bool {
+    fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
+
+        if self.size_widget.touch_up(x, y, context) {
+            return true;
+        }
 
         false
     }
@@ -98,7 +178,7 @@ impl Widget for ExtrusionTool {
                         for z in 0..size {
                             let mut pos = world.to_world_coord(*tile_key, vec3i(x as i32, y as i32, z as i32));
 
-                            let h = 0.3;
+                            let h = self.shape.size as f32 / 100.0;
 
                             pos.y -= h;
                             let p = pos.xz() + vec2f(0.5, 0.5) - hp.xz();
@@ -125,6 +205,12 @@ impl Widget for ExtrusionTool {
         }
 
         world.needs_update = true;
+    }
+
+    fn sdf_triggered(&mut self, sdf: SDFType) {
+        if let Some(curr_sdf_index) = self.curr_sdf_index {
+            self.shape.sdf[curr_sdf_index] = Some(SDF::new(sdf));
+        }
     }
 
 }

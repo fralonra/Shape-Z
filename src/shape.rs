@@ -5,6 +5,8 @@ pub struct Shape {
 
     pub position                : Vec3f,
     pub sdf                     : Vec<Option<SDF>>,
+
+    pub size                    : i32,
 }
 
 impl Shape {
@@ -18,6 +20,8 @@ impl Shape {
             position            : Vec3f::zero(),
 
             sdf,
+
+            size                : 10,
         }
     }
 
@@ -26,7 +30,7 @@ impl Shape {
         self.sdf[index] = primitive;
     }
 
-    pub fn draw(&mut self, pixels: &mut [u8], rect: Rect, stride: usize, context: &mut Context, ctx: &TheContext) {
+    pub fn draw(&mut self, pixels: &mut [u8], rect: Rect, stride: usize, context: &mut Context, _ctx: &TheContext) {
 
         let width_f = rect.width as f32;
         let height_f = rect.height as f32;
@@ -50,7 +54,7 @@ impl Shape {
 
                 let p = vec2f(xx / width_f, yy / height_f);
 
-                let mut hit_index : Option<usize> = None;
+                let mut hit_index : Option<usize>;// = None;
 
                 for (index, sdf) in self.sdf.iter().enumerate() {
                     if let Some(sdf) = sdf {

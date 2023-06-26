@@ -41,7 +41,7 @@ impl Widget for PaletteBar {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, _world: &World, ctx: &TheContext) {
 
         let r: (usize, usize, usize, usize) = self.rect.to_usize();
 
@@ -166,6 +166,7 @@ impl Widget for PaletteBar {
 
                 if self.mode == Mode::Color {
                     self.preview.color = index as u8;
+                    println!("Index {}", index);
                     context.cmd = Some(Command::ColorIndexChanged(index as u8));
                     self.preview.render(&mut self.preview_buffer, context);
                 } else {

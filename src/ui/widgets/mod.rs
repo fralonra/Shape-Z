@@ -6,6 +6,7 @@ pub mod browser;
 pub mod palettebar;
 pub mod shape_selector;
 pub mod switch_button;
+pub mod int_slider;
 
 pub mod tool_extrusion;
 
@@ -25,6 +26,11 @@ pub trait Widget : Sync + Send {
     fn set_text(&mut self, text: String) {}
     fn set_text_list(&mut self, text_list: Vec<String>) {}
 
+    fn set_range(&mut self, min: i32, max: i32) {}
+
+    fn get_value(&mut self) -> i32{ 0 }
+    fn set_value(&mut self, value: i32) {}
+
     fn set_cmd(&mut self, cmd: Command) {}
 
     fn get_state(&self) -> bool { false }
@@ -35,7 +41,7 @@ pub trait Widget : Sync + Send {
 
     fn update(&mut self, context: &mut Context) {}
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext);
+    fn draw(&mut self, pixels: &mut [u8], stride: usize, context: &mut Context, world: &World, ctx: &TheContext);
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
         false
@@ -56,6 +62,10 @@ pub trait Widget : Sync + Send {
     // Only for Tools
 
     fn set_shape(&mut self, shape: Shape) {
+    }
+
+    fn sdf_triggered(&mut self, sdf: SDFType) {
+
     }
 
     fn hit(&mut self, hit: HitRecord, tiles: &Vec<Vec3i>) {

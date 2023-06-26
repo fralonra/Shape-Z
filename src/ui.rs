@@ -15,6 +15,7 @@ pub mod prelude {
     pub use crate::ui::widgets::palettebar::*;
     pub use crate::ui::widgets::switch_button::*;
     pub use crate::ui::widgets::shape_selector::*;
+    pub use crate::ui::widgets::int_slider::*;
 
     pub use crate::ui::widgets::tool_extrusion::*;
 }
@@ -137,7 +138,7 @@ impl UI {
             self.toolbar_widgets[IsoButtonIndex as usize].set_rect(Rect::new(ctx.width - 125, 52, 120, 32));
 
             for w in &mut self.toolbar_widgets {
-                w.draw(frame, context, world, ctx);
+                w.draw(frame, ctx.width, context, world, ctx);
             }
 
             self.toolbar_dirty = false;
@@ -172,7 +173,7 @@ impl UI {
         // ---
 
         for w in &mut self.widgets {
-            w.draw(pixels, context, world, ctx);
+            w.draw(pixels, ctx.width, context, world, ctx);
         }
     }
 
@@ -245,6 +246,10 @@ impl UI {
     /// Returns the iso state
     pub fn get_iso_state(&self) -> bool {
         !self.toolbar_widgets[IsoButtonIndex as usize].get_state()
+    }
+
+    pub fn update_settings(&mut self, context: &mut Context) {
+        self.widgets[SettingsIndex as usize].update(context);
     }
 
 }

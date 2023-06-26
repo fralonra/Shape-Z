@@ -8,8 +8,6 @@ pub struct Settings {
     dirty                       : bool,
 
     widgets                     : Vec<Box<dyn Widget>>,
-
-    pub tile_needs_update       : bool,
 }
 
 impl Widget for Settings {
@@ -62,8 +60,6 @@ impl Widget for Settings {
             dirty               : true,
 
             widgets,
-
-            tile_needs_update   : false,
         }
     }
 
@@ -71,7 +67,7 @@ impl Widget for Settings {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, world: &World, ctx: &TheContext) {
 
         if self.buffer.len() != self.rect.width * self.rect.height * 4 {
             self.buffer = vec![0; self.rect.width * self.rect.height * 4];
@@ -94,7 +90,7 @@ impl Widget for Settings {
 
             let mut tool = TOOL.lock().unwrap();
             tool.set_rect(tool_rect);
-            tool.draw(buffer, context, world, ctx);
+            tool.draw(buffer, stride, context, world, ctx);
 
             /*
             let size = 200;
@@ -194,7 +190,7 @@ impl Widget for Settings {
             */
 
             for w in &mut self.widgets {
-                w.draw(buffer, context, world, ctx);
+                w.draw(buffer, stride, context, world, ctx);
             }
 
             self.dirty = false;
@@ -212,9 +208,13 @@ impl Widget for Settings {
     }
 
     fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, world: &World) -> bool {
-        if context.curr_keys.is_empty() { return false; }
 
         if self.rect.is_inside((x as usize, y as usize)) {
+
+            if TOOL.lock().unwrap().touch_down(x - self.rect.x as f32, y - self.rect.y as f32, context, world) {
+                self.dirty = true;
+                return true;
+            }
 
             /*
             if self.voxels_r.is_inside((x as usize, y as usize)) {
@@ -279,10 +279,14 @@ impl Widget for Settings {
 
     }
 
-    fn touch_dragged(&mut self, x: f32, y: f32, _context: &mut Context) -> bool {
+    fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
         if self.rect.is_inside((x as usize, y as usize)) {
 
+            if TOOL.lock().unwrap().touch_dragged(x - self.rect.x as f32, y - self.rect.y as f32, context) {
+                self.dirty = true;
+                return true;
+            }
             /*
             if let Some(mut cam_drag) = self.cam_orbit_drag {
 
@@ -340,7 +344,7 @@ impl Widget for Settings {
     }
 
     fn update(&mut self, _context: &mut Context) {
-        self.tile_needs_update = true;
+        self.dirty = true;
     }
 
 }

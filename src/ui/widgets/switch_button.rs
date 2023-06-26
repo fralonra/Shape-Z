@@ -45,7 +45,7 @@ impl Widget for SwitchButton {
         self.state
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, _world: &World, ctx: &TheContext) {
         let r = self.rect.to_usize();
         let rounding = (r.3 as f32 / 2.0 + 0.5).ceil();
 

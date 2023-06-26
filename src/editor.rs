@@ -320,6 +320,13 @@ impl MyEditor for Editor {
                     //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
                     //self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
                     //WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
+                },
+                Command::SDFSelected(sdf_type) => {
+                    TOOL.lock().unwrap().sdf_triggered(*sdf_type);
+                    self.ui.update_settings(&mut self.context);
+                    //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
+                    //self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
+                    //WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
                 }
                 _ => {}
             }

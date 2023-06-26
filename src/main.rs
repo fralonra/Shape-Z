@@ -45,7 +45,7 @@ pub mod prelude {
     pub use crate::ui::UI;
 
     pub use crate::editor::{Editor, WORLD};
-    pub use crate::pattern::prelude::*;
+    pub use crate::pattern::*;
     pub use crate::sdf3d::prelude::*;
     pub use crate::property::*;
     pub use crate::hitrecord::HitRecord;

@@ -87,7 +87,7 @@ impl Widget for Browser {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], stride: usize, context: &mut Context, world: &World, ctx: &TheContext) {
 
         let mut r = self.rect.to_usize();
         ctx.draw.rect(pixels, &r, context.width, &context.color_widget);
@@ -120,7 +120,7 @@ impl Widget for Browser {
             self.navi_widgets[3].set_rect(Rect::new(self.rect.x + self.rect.width - 10 - 130, self.rect.y + 2, 130, self.header_height - 6));
 
             for w in &mut self.navi_widgets {
-                w.draw(pixels, context, world, ctx);
+                w.draw(pixels, stride, context, world, ctx);
             }
         }
 

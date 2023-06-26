@@ -1,15 +1,23 @@
 use crate::prelude::*;
+use strum::IntoEnumIterator;
 
-pub enum ShapeSelectorMode {
+#[derive(Clone, PartialEq, Display)]
+ enum ShapeSelectorMode {
     SDF
 }
 
 pub struct ShapeSelector {
     rect                        : Rect,
 
+    mode                        : ShapeSelectorMode,
+
     sdf_previews                : (Vec<u8>, Rect),
-    sdf_index                   : Option<usize>
+
+    curr_index                  : Option<usize>
 }
+
+use ShapeSelectorMode::*;
+use strum_macros::Display;
 
 impl Widget for ShapeSelector {
 
@@ -20,8 +28,11 @@ impl Widget for ShapeSelector {
         Self {
             rect                : Rect::empty(),
 
+            mode                : SDF,
+
             sdf_previews,
-            sdf_index           : None,
+
+            curr_index          : None,
         }
     }
 
@@ -29,14 +40,20 @@ impl Widget for ShapeSelector {
         self.rect = rect;
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, _world: &World, ctx: &TheContext) {
 
-        let r = self.rect.to_usize();
+        let mut r = self.rect.to_usize();
 
         let prev_rect = Rect::new(r.0, r.1, self.sdf_previews.1.width, self.sdf_previews.1.height);
         ctx.draw.rect(pixels, &r, ctx.width, &context.color_toolbar);
 
         ctx.draw.copy_slice(pixels, &self.sdf_previews.0, &prev_rect.to_usize(), ctx.width);
+
+        if let Some(curr_index) = self.curr_index {
+            r.1 += curr_index * 40;
+            r.3 = 40;
+            ctx.draw.rect_outline(pixels, &r, ctx.width, context.color_white)
+        }
         /*
         let color: [u8; 4] = if !self.clicked && !self.state { context.color_selected } else { context.color_button };
 
@@ -56,7 +73,20 @@ impl Widget for ShapeSelector {
         }
     }
 
-    fn touch_down(&mut self, x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
+    fn touch_down(&mut self, _x: f32, y: f32, context: &mut Context, _world: &World) -> bool {
+
+        let index = (y as usize - self.rect.y) / 40;
+
+        if self.mode == SDF {
+            for (sdf_index, sdf) in SDFType::iter().enumerate() {
+                if sdf_index == index {
+                    context.cmd = Some(Command::SDFSelected(sdf));
+                    self.curr_index = Some(index);
+                    return true;
+                }
+            }
+        }
+
         false
     }
 
@@ -68,6 +98,10 @@ impl Widget for ShapeSelector {
     }*/
 
     fn touch_up(&mut self, _x: f32, _y: f32, _context: &mut Context) -> bool {
+        if self.curr_index.is_some() {
+            self.curr_index = None;
+            return  true;
+        }
         false
     }
 }

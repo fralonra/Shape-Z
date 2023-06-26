@@ -47,7 +47,7 @@ impl Widget for TextButton {
         self.state
     }
 
-    fn draw(&mut self, pixels: &mut [u8], context: &mut Context, _world: &World, ctx: &TheContext) {
+    fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, _world: &World, ctx: &TheContext) {
 
         let color: [u8; 4] = if self.clicked || self.state { context.color_selected } else { context.color_button };
 
