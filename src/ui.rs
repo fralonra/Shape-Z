@@ -16,6 +16,7 @@ pub mod prelude {
     pub use crate::ui::widgets::switch_button::*;
     pub use crate::ui::widgets::shape_selector::*;
     pub use crate::ui::widgets::int_slider::*;
+    pub use crate::ui::widgets::value_list::*;
 
     pub use crate::ui::widgets::tool_extrusion::*;
 }

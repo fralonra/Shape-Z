@@ -62,29 +62,18 @@ impl Widget for IntSlider {
 
         let min = self.min as f32;
 
-        if v > min {
+        if v >= min {
             let max = self.max as f32;
             let pp = self.rect.width as f32 / (max - min);
 
-            let mut r = self.rect.to_usize();
             let left_off = ((v - 1.0) * pp).round() as usize;
 
-            if left_off < r.2 {
-                r.2 = left_off;
-                let mut round = (rounding, rounding, rounding, rounding);
-                if v < max {
-                    round.0 = 0.0;
-                    round.1 = 0.0;
-                } else {
-                    r.2 = self.rect.width;
-                }
-
-                ctx.draw.rounded_rect(pixels, &r, stride, &context.color_selected, &round);
-
+            if left_off <= self.rect.width {
+                self.draw_rounded_rect_x_limit(pixels, &self.rect.to_usize(), stride, &context.color_selected, &(rounding, rounding, rounding, rounding), left_off);
             }
 
             if let Some(font) = &context.font {
-                ctx.draw.blend_text_rect(pixels, &self.rect.to_usize(), stride, &font, 16.0, &format!("{}{}", self.text, v as i32), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
+                ctx.draw.blend_text_rect(pixels, &self.rect.to_usize(), stride, &font, 16.0, &format!("{}: {}", self.text, v as i32), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
             }
         }
         /*
@@ -138,6 +127,9 @@ impl Widget for IntSlider {
 
             if  x >= self.rect.x as f32 {
 
+                if x < self.rect.x as f32 {
+                    self.value = self.min;
+                } else
                 if x > self.rect.x as f32 + self.rect.width as f32 {
                     self.value = self.max;
                 } else {
@@ -161,5 +153,9 @@ impl Widget for IntSlider {
             return true;
         }
         false
+    }
+
+    fn generate_value(&self) -> Value {
+        Value::Int(self.text.clone(), self.value, self.min, self.max)
     }
 }

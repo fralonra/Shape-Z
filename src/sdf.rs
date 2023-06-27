@@ -18,10 +18,27 @@ pub struct SDF {
 
     pub position                : Vec2f,
     pub size                    : Vec2f,
+
+    pub parameters              : Vec<Value>
 }
 
 impl SDF {
     pub fn new(sdf_type: SDFType) -> Self {
+
+        let parameters= match sdf_type {
+            SDFType::Box => {
+                vec![
+                    Int("Width".to_string(), 10, 1, 100),
+                    Int("Height".to_string(), 10, 1, 100),
+                ]
+            },
+            SDFType::Circle => {
+                vec![
+                    Int("Radius".to_string(), 10, 1, 100),
+                ]
+            }
+        };
+
         Self {
             sdf_type,
 
@@ -29,17 +46,23 @@ impl SDF {
 
             position            : Vec2f::new(0.5, 0.5),
             size                : Vec2f::new(0.4, 0.4),
+
+            parameters,
         }
     }
 
-    pub fn distance(&self, p: Vec2f) -> f32 {
+    pub fn distance(&self, p: Vec2f, zoom: f32) -> f32 {
         let mut d = std::f32::MAX;
         if self.sdf_type == Box {
-            let q = abs(p - self.position) - self.size / 2.0;
+            let w = self.parameters[0].get_int() as f32 / 100.0 / 2.0 / zoom;
+            let h = self.parameters[1].get_int() as f32 / 100.0 / 2.0 / zoom;
+
+            let q = abs(p - self.position) - vec2f(w, h);
             d = length(max(q,Vec2f::new(0.0, 0.0))) + min(max(q.x,q.y),0.0);
         } else
         if self.sdf_type == Circle {
-            d = length(p - self.position) - self.size.x / 2.0;
+            let size = self.parameters[0].get_int() as f32 / 100.0 / 2.0 / zoom;
+            d = length(p - self.position) - size;
         }
         d
     }

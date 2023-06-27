@@ -58,7 +58,7 @@ impl Shape {
 
                 for (index, sdf) in self.sdf.iter().enumerate() {
                     if let Some(sdf) = sdf {
-                        let dd = sdf.distance(p);
+                        let dd = sdf.distance(p, 1.0);
                         if dd < d {
                             hit_index = Some(index);
                             d = dd;
@@ -90,7 +90,7 @@ impl Shape {
         let mut d: f32 = std::f32::MAX;
         for (index, sdf) in self.sdf.iter().enumerate() {
             if let Some(sdf) = sdf {
-                let dd = sdf.distance(p);
+                let dd = sdf.distance(p, 2.0);
                 if dd < 0.0 && dd < d {
                     hit_index = Some(index);
                     d = dd;

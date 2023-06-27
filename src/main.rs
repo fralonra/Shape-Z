@@ -22,6 +22,7 @@ pub mod material_preview;
 pub mod project;
 pub mod sdf;
 pub mod shape;
+pub mod value;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -63,6 +64,7 @@ pub mod prelude {
     pub use crate::project::*;
     pub use crate::sdf::*;
     pub use crate::shape::*;
+    pub use crate::value::{*, Value::*};
 }
 
 use prelude::*;
