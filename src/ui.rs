@@ -27,6 +27,7 @@ enum WidgetIndices {
     BrowserIndex,
     ModeBarIndex,
     ShapeSelectorIndex,
+    ValueListIndex,
 }
 
 #[repr(usize)]
@@ -76,6 +77,9 @@ impl UI {
         let shape_selector: Box<ShapeSelector> = Box::new(ShapeSelector::new());
         widgets.push(shape_selector);
 
+        let value_list: Box<ValueList> = Box::new(ValueList::new());
+        widgets.push(value_list);
+
 
         // Toolbar Widgets
 
@@ -124,8 +128,6 @@ impl UI {
         if self.toolbar_dirty {
             let frame = &mut self.toolbar_buffer[..];
 
-            //println!("drawing toolbar");
-
             ctx.draw.rect(frame, &(0, 0, self.toolbar_rect.width as usize, self.toolbar_rect.height as usize), ctx.width, &context.color_toolbar);
             ctx.draw.rect(frame, &(0, 45, ctx.width, 1), ctx.width, &[21, 21, 21, 255]);
 
@@ -149,7 +151,7 @@ impl UI {
 
         // --- Settings rect
 
-        let settings_rect = Rect::new(context.width - self.settings_width, self.toolbar_height, self.settings_width, context.height - self.toolbar_height);
+        let settings_rect = Rect::new(context.width - self.settings_width, self.toolbar_height, self.settings_width, context.height - self.toolbar_height - self.browser_height);
 
         self.widgets[SettingsIndex as usize].set_rect(settings_rect.clone());
 
@@ -170,6 +172,12 @@ impl UI {
         let browser_rect: Rect = Rect::new(self.palettebar_width, context.height - self.browser_height, context.width - self.settings_width -  self.palettebar_width, self.browser_height);
 
         self.widgets[BrowserIndex as usize].set_rect(browser_rect.clone());
+
+        // --- ValueList rect
+
+        let valuelist_rect = Rect::new(context.width - self.settings_width, context.height - self.browser_height, self.settings_width, self.browser_height);
+
+        self.widgets[ValueListIndex as usize].set_rect(valuelist_rect.clone());
 
         // ---
 
@@ -226,6 +234,18 @@ impl UI {
 
         for w in &mut self.widgets {
             if w.touch_up(x, y, context) {
+                consumed = true;
+            }
+        }
+
+        consumed
+    }
+
+    pub fn key_down(&mut self, char: Option<char>, key: Option<theframework::WidgetKey>, context: &mut Context) -> bool {
+        let mut consumed = false;
+
+        for w in &mut self.widgets {
+            if w.key_down(char, key.clone(), context) {
                 consumed = true;
             }
         }

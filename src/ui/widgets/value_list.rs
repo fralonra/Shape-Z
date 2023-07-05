@@ -28,18 +28,25 @@ impl Widget for ValueList {
     }
 
     fn set_value_list(&mut self, values: Vec<Value>) {
+        /*
         let mut widgets = vec![];
         for value in &values {
             let w = value.create_widget();
             widgets.push(w);
         }
         self.values = values;
-        self.widgets = widgets;
+        self.widgets = widgets;*/
     }
 
 
     fn draw(&mut self, pixels: &mut [u8], stride: usize, context: &mut Context, world: &World, ctx: &TheContext) {
         let mut rect = self.rect.clone();
+
+        ctx.draw.rect(pixels, &rect.to_usize(), context.width, &context.color_widget);
+
+        let r = self.rect.to_usize();
+        ctx.draw.rect(pixels, &(r.0, r.1, r.2, 1), ctx.width, &context.color_black);
+
         rect.height = 24;
         for w in &mut self.widgets {
             w.set_rect(rect);

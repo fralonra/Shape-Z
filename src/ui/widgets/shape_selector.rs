@@ -45,7 +45,8 @@ impl Widget for ShapeSelector {
         let mut r = self.rect.to_usize();
 
         let prev_rect = Rect::new(r.0, r.1, self.sdf_previews.1.width, self.sdf_previews.1.height);
-        ctx.draw.rect(pixels, &r, ctx.width, &context.color_toolbar);
+        ctx.draw.rect(pixels, &r, ctx.width, &context.color_widget);
+        ctx.draw.rect(pixels, &(r.0 + r.2 - 1, r.1, 1, r.3), ctx.width, &context.color_black);
 
         ctx.draw.copy_slice(pixels, &self.sdf_previews.0, &prev_rect.to_usize(), ctx.width);
 

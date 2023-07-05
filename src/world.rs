@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 use rand::{thread_rng, Rng, rngs::ThreadRng};
+use theframework::prelude::TheProperty::S;
 
 pub struct World {
     pub camera              : Camera,
@@ -465,12 +466,16 @@ impl World {
 
     /// Apply the given shape
 
-    pub fn apply(&mut self, key: Vec3i, tile_key: Vec3i, tiles: &Vec<Vec3i>) {
+    pub fn apply(&mut self, /*key: Vec3i, tile_key: Vec3i,*/ tiles: &Vec<Vec3i>) {
         //let wc = self.to_world_coord(key, tile_key);
 
         //let shape = Shape::new();
 
-        let hp: Vec3<f32> = self.to_world_coord(key, tile_key);
+        //let hp: Vec3<f32> = vec3f(0.0, 0.0, 0.0);//self.to_world_coord(key, tile_key);
+
+        let sdf = SDF3D::new(SDF3DType::Sphere);
+
+        println!("{:?}", tiles);
 
         for tile_key in tiles {
             if let Some(mut tile) = self.get_tile(*tile_key) {
@@ -491,6 +496,7 @@ impl World {
                                 tile.set_voxel(x, y, z, Some((10, 10)));
                             }*/
 
+                            /*
                             let p = abs(pos.xy() - vec2f(0.0, 0.3) - hp.xy()) - vec2f(0.2, 0.2);
                             let mut d = length(max(p,Vec2f::new(0.0, 0.0))) + min(max(p.x,p.y),0.0);
 
@@ -499,8 +505,12 @@ impl World {
                             let h = 0.2;
                             let w = vec2f( d, abs(pos.z - hp.z) - h );
                             d = min(max(w.x,w.y),0.0) + length(max(w,vec2f(0.0, 0.0)));
+                            */
+
+                            let d = sdf.distance(pos);
 
                             if d < 0.0 {
+
                                 tile.set_voxel(x, y, z, Some((10, 10)));
                             }
                         }
@@ -518,17 +528,19 @@ impl World {
     pub fn to_world_coord(&self, key: Vec3i, tile_key: Vec3i) -> Vec3f {
         let mut wc = Vec3f::from(key);
 
-        wc.x += tile_key.x as f32 / 100.0;
-        wc.y += tile_key.y as f32 / 100.0;
-        wc.z += tile_key.z as f32 / 100.0;
+        let size = Project::tile_size() as f32;
+        wc.x += tile_key.x as f32 / size;
+        wc.y += tile_key.y as f32 / size;
+        wc.z += tile_key.z as f32 / size;
 
         wc
     }
 
     /// Converts the world coordinate to hit keys
     pub fn to_tile_coord(&self, wc: Vec3f) -> (Vec3i, Vec3i) {
+        let size = Project::tile_size() as f32;
         let key = Vec3i::new(wc.x as i32, wc.y as i32, wc.z as i32);
-        let tile_key = Vec3i::new((frac(wc.x) * 100.0) as i32, (frac(wc.y) * 100.0) as i32, (frac(wc.z) * 100.0) as i32);
+        let tile_key = Vec3i::new((frac(wc.x) * size) as i32, (frac(wc.y) * size) as i32, (frac(wc.z) * size) as i32);
         (key, tile_key)
     }
 

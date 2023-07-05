@@ -1,85 +1,45 @@
 use crate::prelude::*;
 
-#[derive(PartialEq, Debug, Clone)]
-enum Mode {
-    Tools,
-    Navigator
-}
 
 pub struct Browser {
-    mode                : Mode,
-
     rect                : Rect,
-
-    navigator           : Navigator,
 
     header_height       : usize,
 
-    mode_widgets        : Vec<Box<dyn Widget>>,
-    //tool_widgets        : Vec<Box<dyn Widget>>,
-    navi_widgets        : Vec<Box<dyn Widget>>,
-
-    // Tools
-    //item_size           : (usize, usize),
-    //content_rects       : Vec<Rect>,
-    //ids                 : Vec<Uuid>,
+    widgets             : Vec<Box<dyn Widget>>,
 }
 
 impl Widget for Browser {
 
     fn new() -> Self {
 
-        let mut mode_widgets : Vec<Box<dyn Widget>> = vec![];
-
-        let mut tools_button = Box::new(TextButton::new());
-        tools_button.set_text("TOOLS".to_string());
-        tools_button.set_has_state(true);
-        mode_widgets.push(tools_button);
-
-        let mut navigator_button = Box::new(TextButton::new());
-        navigator_button.set_text("NAVI".to_string());
-        navigator_button.set_has_state(false);
-        mode_widgets.push(navigator_button);
-
-        //let tool_widgets : Vec<Box<dyn Widget>> = vec![];
-
-        let mut navi_widgets : Vec<Box<dyn Widget>> = vec![];
+        let mut widgets : Vec<Box<dyn Widget>> = vec![];
 
         let mut create_tile_button = Box::new(TextButton::new());
-        create_tile_button.set_text("CREATE".to_string());
+        create_tile_button.set_text("BUILDER".to_string());
         create_tile_button.set_has_state(false);
-        navi_widgets.push(create_tile_button);
+        widgets.push(create_tile_button);
 
         let mut delete_tile_button = Box::new(TextButton::new());
         delete_tile_button.set_text("DELETE".to_string());
         delete_tile_button.set_has_state(false);
-        navi_widgets.push(delete_tile_button);
+        widgets.push(delete_tile_button);
 
         let mut focus_tile_button = Box::new(TextButton::new());
         focus_tile_button.set_text("FOCUS".to_string());
         focus_tile_button.set_has_state(false);
-        navi_widgets.push(focus_tile_button);
+        widgets.push(focus_tile_button);
 
         let mut apply_tool_button = Box::new(TextButton::new());
         apply_tool_button.set_text("APPLY TOOL".to_string());
-        navi_widgets.push(apply_tool_button);
+        widgets.push(apply_tool_button);
 
         Self {
-            mode            : Mode::Navigator,
-
             rect            : Rect::empty(),
 
-            navigator       : Navigator::new(),
-
-            mode_widgets,
-            // tool_widgets,
-            navi_widgets,
+            widgets,
 
             header_height   : 30,
-
-            // item_size       : (120, 25),
-            // content_rects   : vec![],
-            // ids             : vec![],
         }
     }
 
@@ -91,7 +51,8 @@ impl Widget for Browser {
 
         let mut r = self.rect.to_usize();
         ctx.draw.rect(pixels, &r, context.width, &context.color_widget);
-        ctx.draw.rect(pixels, &(r.0 + r.2, r.1, 1, r.3), ctx.width, &context.color_black);
+        ctx.draw.rect(pixels, &(r.0 + r.2 - 1, r.1, 1, r.3), ctx.width, &context.color_black);
+        ctx.draw.rect(pixels, &(r.0, r.1, r.2, 1), ctx.width, &context.color_black);
 
         r.3 = self.header_height;
 /* *
@@ -111,26 +72,48 @@ impl Widget for Browser {
 */
         let start_x = r.0 + 10;
 
-        // --- TOOLS / NAVI Widgets
+        // --- Widgets
 
-        if self.mode == Mode::Navigator {
-            self.navi_widgets[0].set_rect(Rect::new(start_x, self.rect.y + 2, 100, self.header_height - 6));
-            self.navi_widgets[1].set_rect(Rect::new(start_x+ 110, self.rect.y + 2, 100, self.header_height - 6));
-            self.navi_widgets[2].set_rect(Rect::new(start_x+ 220, self.rect.y + 2, 100, self.header_height - 6));
-            self.navi_widgets[3].set_rect(Rect::new(self.rect.x + self.rect.width - 10 - 130, self.rect.y + 2, 130, self.header_height - 6));
+        self.widgets[0].set_rect(Rect::new(start_x, self.rect.y + 2, 100, self.header_height - 6));
+        self.widgets[1].set_rect(Rect::new(start_x+ 110, self.rect.y + 2, 100, self.header_height - 6));
+        self.widgets[2].set_rect(Rect::new(start_x+ 220, self.rect.y + 2, 100, self.header_height - 6));
+        self.widgets[3].set_rect(Rect::new(self.rect.x + self.rect.width - 10 - 130, self.rect.y + 2, 130, self.header_height - 6));
 
-            for w in &mut self.navi_widgets {
-                w.draw(pixels, stride, context, world, ctx);
-            }
+        for w in &mut self.widgets {
+            w.draw(pixels, stride, context, world, ctx);
         }
 
         // ---
 
-        self.navigator.set_rect(Rect::new(self.rect.x, self.rect.y + self.header_height, self.rect.width, self.rect.height - self.header_height));
+        let crect = Rect::new(self.rect.x, self.rect.y + self.header_height, self.rect.width, self.rect.height - self.header_height);
 
-        if self.mode == Mode::Navigator {
-            self.navigator.draw(pixels, context, world, ctx);
+        let obj_left = 80;
+        let obj_height = 40;
+
+        if context.curr_object.tools.is_empty() == false {
+            for t in &context.curr_object.tools {
+
+            }
         } else {
+            let mut rect = crect.clone();
+            rect.x += obj_left;
+            rect.width -= 1 + obj_left;
+            rect.height = obj_height;
+            ctx.draw.rect(pixels, &rect.to_usize(), context.width, &context.color_toolbar);
+
+            let mut left_rect = crect.clone();
+            left_rect.width = obj_left;
+            left_rect.height = obj_height;
+
+            if let Some(font) = &context.font {
+                ctx.draw.blend_text_rect(pixels, &left_rect.to_usize(), context.width, &font, 20.0, &"TOOL".to_string(), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
+            }
+        }
+
+        /*
+        if self.mode == Mode::CodeEditor {
+            context.code_editor.draw(pixels, content_rect.to_usize(), ctx.width);
+        } else {*/
             /*
             self.content_rects = vec![];
             self.ids = vec![];
@@ -172,7 +155,7 @@ impl Widget for Browser {
                     r.1 += r.3;
                 }
             }*/
-        }
+        //}
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
@@ -187,77 +170,21 @@ impl Widget for Browser {
 
         if self.contains(x, y) {
 
-            for (index, widget) in self.mode_widgets.iter_mut().enumerate() {
-                if widget.touch_down(x, y, context, world) {
+            for (index, w) in self.widgets.iter_mut().enumerate() {
+                if w.touch_down(x, y, context, world) {
                     if index == 0 {
-                        self.mode = Mode::Tools;
-                        self.mode_widgets[0].set_has_state(true);
-                        self.mode_widgets[1].set_has_state(false);
-                        return true;
+
                     } else
                     if index == 1 {
-                        self.mode = Mode::Navigator;
-                        self.mode_widgets[0].set_has_state(false);
-                        self.mode_widgets[1].set_has_state(true);
-                        return true;
-                    }
-                }
-            }
 
-            if self.mode == Mode::Navigator {
-                for (index, w) in self.navi_widgets.iter_mut().enumerate() {
-                    if w.touch_down(x, y, context, world) {
-                        if index == 0 {
-                            if w.get_state() {
-                                self.navigator.set_mode(NavigatorMode::Create);
-                                self.navi_widgets[1].set_has_state(false);
-                                self.navi_widgets[2].set_has_state(false);
-                            } else {
-                                self.navigator.set_mode(NavigatorMode::None)
-                            }
-                        } else
-                        if index == 1 {
-                            if w.get_state() {
-                                self.navigator.set_mode(NavigatorMode::Delete);
-                                self.navi_widgets[0].set_has_state(false);
-                                self.navi_widgets[2].set_has_state(false);
-                            } else {
-                                self.navigator.set_mode(NavigatorMode::None)
-                            }
-                        } else
-                        if index == 2 {
-                            if w.get_state() {
-                                self.navigator.set_mode(NavigatorMode::Focus);
-                                self.navi_widgets[0].set_has_state(false);
-                                self.navi_widgets[1].set_has_state(false);
-                            } else {
-                                self.navigator.set_mode(NavigatorMode::None)
-                            }
-                        } else
-                        if index == 3 {
-                            context.cmd = Some(Command::ApplyTool);
-                        }
-
-                        return true;
+                    } else
+                    if index == 2 {
+                    } else
+                    if index == 3 {
+                        context.cmd = Some(Command::ApplyTool);
                     }
-                }
-            }
 
-            if self.mode == Mode::Tools {
-                /*
-                for (index, r) in self.content_rects.iter().enumerate() {
-                    if r.is_inside((x as usize, y as usize)) {
-                        if let Some(tool) = context.tools.get(&context.curr_tools[index]) {
-                            context.curr_tool = tool.clone();
-                            context.curr_tool_role = tool.role();
-                            return true;
-                        }
-                    }
-                }*/
-            } else
-            if self.mode == Mode::Navigator {
-                if y as usize > self.rect.y + self.header_height {
-                    return self.navigator.touch_down(x, y, context);
+                    return true;
                 }
             }
 
@@ -267,12 +194,10 @@ impl Widget for Browser {
         }
     }
 
-    fn touch_dragged(&mut self, x: f32, y: f32, _context: &mut Context) -> bool {
+    fn touch_dragged(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
         if self.contains(x, y) {
-            if self.mode == Mode::Navigator {
-                return self.navigator.touch_dragged(x, y);
-            }
+
         }
 
         false
@@ -280,14 +205,7 @@ impl Widget for Browser {
 
     fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
-        if self.mode == Mode::Navigator {
-            for (_index, w) in self.navi_widgets.iter_mut().enumerate() {
-                if w.touch_up(x, y, context) {
-                    return true;
-                }
-            }
-        }
-
         false
     }
+
 }

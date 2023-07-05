@@ -3,37 +3,38 @@ use crate::prelude::*;
 use strum_macros::{EnumIter, Display};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy, EnumIter, Display)]
-pub enum SDFType {
+pub enum SDF3DType {
     Box,
-    Circle
+    Sphere
 }
 
-use SDFType::*;
+use SDF3DType::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
-pub struct SDF {
-    sdf_type                    : SDFType,
+pub struct SDF3D {
+    sdf_type                    : SDF3DType,
 
     pub pattern                 : Pattern,
 
-    pub position                : Vec2f,
+    pub position                : Vec3f,
 
     pub parameters              : Vec<Value>
 }
 
-impl SDF {
-    pub fn new(sdf_type: SDFType) -> Self {
+impl SDF3D {
+    pub fn new(sdf_type: SDF3DType) -> Self {
 
         let parameters= match sdf_type {
-            SDFType::Box => {
+            Box => {
                 vec![
                     Int("Width".to_string(), 10, 1, 100),
                     Int("Height".to_string(), 10, 1, 100),
+                    Int("Depth".to_string(), 10, 1, 100),
                 ]
             },
-            SDFType::Circle => {
+            Sphere => {
                 vec![
-                    Int("Radius".to_string(), 10, 1, 100),
+                    Float("Radius".to_string(), 0.5, 0.001, 10.0),
                 ]
             }
         };
@@ -43,23 +44,25 @@ impl SDF {
 
             pattern             : Pattern::new(PatternType::Solid),
 
-            position            : Vec2f::new(0.5, 0.5),
+            position            : Vec3f::new(1.0, 0.5, 0.5),
 
             parameters,
         }
     }
 
-    pub fn distance(&self, p: Vec2f, zoom: f32) -> f32 {
+    pub fn distance(&self, p: Vec3f) -> f32 {
         let mut d = std::f32::MAX;
         if self.sdf_type == Box {
+            /*
             let w = self.parameters[0].get_int() as f32 / 100.0 / 2.0 / zoom;
             let h = self.parameters[1].get_int() as f32 / 100.0 / 2.0 / zoom;
+            let depth = self.parameters[2].get_int() as f32 / 100.0 / 2.0 / zoom;
 
-            let q = abs(p - self.position) - vec2f(w, h);
-            d = length(max(q,Vec2f::new(0.0, 0.0))) + min(max(q.x,q.y),0.0);
+            let q = abs(p - self.position) - vec3f(w, h, depth);
+            d = length(max(q,Vec3f::new(0.0, 0.0, 0.0))) + min(max(q.x,q.y),0.0);*/
         } else
-        if self.sdf_type == Circle {
-            let size = self.parameters[0].get_int() as f32 / 100.0 / 2.0 / zoom;
+        if self.sdf_type == Sphere {
+            let size = self.parameters[0].get_float();
             d = length(p - self.position) - size;
         }
         d
@@ -104,6 +107,7 @@ impl SDF {
         }
     }
 
+    /*
     pub fn create_preview(&self, pixels: &mut [u8], rect: Rect, stride: usize) {
 
         let half = rect.width as f32 / 2.0;
@@ -137,7 +141,7 @@ impl SDF {
                 }
             }
         } else
-        if self.sdf_type == Circle {
+        if self.sdf_type == Sphere {
             let size = half - 5.0;
             for y in rect.y..rect.y + rect.height {
                 for x in rect.x..rect.x + rect.width {
@@ -148,6 +152,6 @@ impl SDF {
             }
         }
 
-    }
+    }*/
 }
 

@@ -8,6 +8,8 @@ pub struct Settings {
     dirty                       : bool,
 
     widgets                     : Vec<Box<dyn Widget>>,
+
+    navigator                   : Navigator,
 }
 
 impl Widget for Settings {
@@ -60,6 +62,8 @@ impl Widget for Settings {
             dirty               : true,
 
             widgets,
+
+            navigator           : Navigator::new(),
         }
     }
 
@@ -69,6 +73,10 @@ impl Widget for Settings {
 
     fn draw(&mut self, pixels: &mut [u8], _stride: usize, context: &mut Context, world: &World, ctx: &TheContext) {
 
+        self.navigator.set_rect(self.rect);
+        self.navigator.draw(pixels, context, world, ctx);
+
+        /*
         if self.buffer.len() != self.rect.width * self.rect.height * 4 {
             self.buffer = vec![0; self.rect.width * self.rect.height * 4];
             self.dirty = true;
@@ -196,7 +204,7 @@ impl Widget for Settings {
             self.dirty = false;
         }
         ctx.draw.copy_slice(pixels, &self.buffer, &self.rect.to_usize(), ctx.width);
-
+        */
     }
 
     fn contains(&mut self, x: f32, y: f32) -> bool {
@@ -211,7 +219,7 @@ impl Widget for Settings {
 
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if TOOL.lock().unwrap().touch_down(x - self.rect.x as f32, y - self.rect.y as f32, context, world) {
+            if self.navigator.touch_down(x, y, context) {
                 self.dirty = true;
                 return true;
             }
@@ -283,7 +291,7 @@ impl Widget for Settings {
 
         if self.rect.is_inside((x as usize, y as usize)) {
 
-            if TOOL.lock().unwrap().touch_dragged(x - self.rect.x as f32, y - self.rect.y as f32, context) {
+            if self.navigator.touch_dragged(x, y) {
                 self.dirty = true;
                 return true;
             }

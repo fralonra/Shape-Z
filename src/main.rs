@@ -5,7 +5,6 @@ use theframework::*;
 pub mod editor;
 pub mod ui;
 pub mod pattern;
-pub mod sdf3d;
 pub mod property;
 pub mod hitrecord;
 pub mod world;
@@ -13,7 +12,7 @@ pub mod camera;
 pub mod buffer;
 pub mod tile;
 pub mod palette;
-// pub mod tool;
+pub mod tool;
 // pub mod script;
 pub mod misc;
 pub mod pbr_path;
@@ -21,8 +20,10 @@ pub mod material;
 pub mod material_preview;
 pub mod project;
 pub mod sdf;
+pub mod sdf3d;
 pub mod shape;
 pub mod value;
+pub mod object;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
@@ -47,7 +48,6 @@ pub mod prelude {
 
     pub use crate::editor::{Editor, WORLD};
     pub use crate::pattern::*;
-    pub use crate::sdf3d::prelude::*;
     pub use crate::property::*;
     pub use crate::hitrecord::HitRecord;
     pub use crate::world::World;
@@ -55,7 +55,8 @@ pub mod prelude {
     pub use crate::buffer::ColorBuffer;
     pub use crate::tile::Tile;
     pub use crate::palette::Palette;
-    // pub use crate::tool::Tool;
+    pub use crate::tool::Tool;
+    pub use crate::object::Object;
     // pub use crate::script::*;
     pub use crate::misc::*;
     pub use crate::pbr_path::*;
@@ -63,6 +64,7 @@ pub mod prelude {
     pub use crate::material_preview::MaterialPreview;
     pub use crate::project::*;
     pub use crate::sdf::*;
+    pub use crate::sdf3d::{*, SDF3DType};
     pub use crate::shape::*;
     pub use crate::value::{*, Value::*};
 }

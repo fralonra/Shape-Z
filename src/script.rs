@@ -289,7 +289,7 @@ impl ScriptVec3f {
         });
 
         // Hit Record
-        HitRecord::register(engine);
+        // HitRecord::register(engine);
 
         // Side Enum
         engine.register_type_with_name::<SideEnum>("Side")

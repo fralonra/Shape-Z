@@ -11,7 +11,7 @@ pub mod value_list;
 
 pub mod tool_extrusion;
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 
 pub enum WidgetValue {
     Color(String, u8),
@@ -58,6 +58,10 @@ pub trait Widget : Sync + Send {
     }
 
     fn touch_up(&mut self, _x: f32, _y: f32, context: &mut Context) -> bool {
+        false
+    }
+
+    fn key_down(&mut self, char: Option<char>, key: Option<theframework::WidgetKey>, context: &mut Context) -> bool {
         false
     }
 

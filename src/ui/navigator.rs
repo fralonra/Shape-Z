@@ -80,6 +80,7 @@ impl Navigator {
             let start_y = height / 2.0 + self.offset.1;
 
             let tile_size = self.tile_size;
+            let c = 24.0 / 255.0;
 
             self.buffer
                 .par_rchunks_exact_mut(width * LINES * 4)
@@ -91,7 +92,8 @@ impl Navigator {
                         let x = (i % width) as f32;
                         let y = height - (i / width) as f32;
 
-                        let mut color = [0.075, 0.075, 0.075, 1.0];
+
+                        let mut color = [c, c, c, 1.0];
 
                         let tile_half_x = tile_size / 2.0;
                         let tile_half_y = tile_size / 4.0;
@@ -210,8 +212,6 @@ impl Navigator {
         self.td_offset = self.offset.clone();
 
         let p = self.grid_pos_for_screen_coord(x, y);
-
-        //println!("{:?}", p);
 
         if self.mode == NavigatorMode::Create {
             context.cmd = Some(Command::CreateTile(p.0, 0, p.1));

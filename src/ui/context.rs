@@ -48,6 +48,7 @@ pub struct Context {
     pub materials               : Vec<Material>,
 
     pub font                    : Option<Font>,
+    pub source_font             : Option<Font>,
     pub icons                   : FxHashMap<String, (Vec<u8>, u32, u32)>,
 
     pub edit_state              : bool,
@@ -57,6 +58,8 @@ pub struct Context {
 
     //pub engine                  : rhai::Engine,
     //pub tools                   : FxHashMap<String, Tool>,
+
+    pub curr_object             : Object,
 
     // Current Color & Material
 
@@ -79,14 +82,22 @@ impl Context {
         // Load Font
 
         let mut font : Option<Font> = None;
+        let mut source_font : Option<Font> = None;
         let mut icons : FxHashMap<String, (Vec<u8>, u32, u32)> = FxHashMap::default();
 
         for file in Embedded::iter() {
             let name = file.as_ref();
-            if name.starts_with("fonts/") {
+            if name.starts_with("fonts/Roboto") {
                 if let Some(font_bytes) = Embedded::get(name) {
                     if let Some(f) = Font::from_bytes(font_bytes.data, fontdue::FontSettings::default()).ok() {
                         font = Some(f);
+                    }
+                }
+            } else
+            if name.starts_with("fonts/Source") {
+                if let Some(font_bytes) = Embedded::get(name) {
+                    if let Some(f) = Font::from_bytes(font_bytes.data, fontdue::FontSettings::default()).ok() {
+                        source_font = Some(f);
                     }
                 }
             } else
@@ -192,11 +203,13 @@ impl Context {
             materials,
 
             font,
+            source_font,
             icons,
 
             edit_state          : true,
             iso_state           : false,
 
+            curr_object         : Object::new(),
             //engine,
             //tools,
 

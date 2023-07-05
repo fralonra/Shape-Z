@@ -221,6 +221,10 @@ impl TheTrait for Editor {
         }
     }
 
+    fn key_down(&mut self, char: Option<char>, key: Option<WidgetKey>, ctx: &mut TheContext) -> bool {
+        self.ui.key_down(char, key, &mut self.context)
+    }
+
     fn needs_update(&mut self, _ctx: &mut TheContext) -> bool {
         if self.path_iter < self.path_max {
             true
@@ -274,7 +278,7 @@ impl MyEditor for Editor {
                     WORLD.lock().unwrap().needs_update = true;
                 },
                 Command::TileSelected(x, y, z) => {
-                    if WORLD.lock().unwrap().project.tiles.contains_key(&(*x, *y, *z)) {
+                    //if WORLD.lock().unwrap().project.tiles.contains_key(&(*x, *y, *z)) {
                         if self.context.curr_keys.contains(&vec3i(*x, *y, *z)) {
                             if let Some(index) = self.context.curr_keys.iter().position(|&k| k == vec3i(*x, *y, *z)) {
                                 self.context.curr_keys.remove(index);
@@ -282,7 +286,7 @@ impl MyEditor for Editor {
                         } else {
                             self.context.curr_keys.push(vec3i(*x, *y, *z));
                         }
-                    }
+                    //}
                 },
                 Command::TileFocusSelected(x, y, z) => {
                     if WORLD.lock().unwrap().project.tiles.contains_key(&(*x, *y, *z)) {
@@ -317,9 +321,11 @@ impl MyEditor for Editor {
                     }
                 },
                 Command::ApplyTool => {
-                    //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
-                    //self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
-                    //WORLD.lock().unwrap().apply(hit.key, hit.tile_key, &self.context.curr_keys);
+                    // let script = self.context.code_editor.get_text();
+                    // println!("{}", script);
+                    // WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();
+                    // self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
+                    WORLD.lock().unwrap().apply(&self.context.curr_keys);
                 },
                 Command::SDFSelected(sdf_type) => {
                     TOOL.lock().unwrap().sdf_triggered(*sdf_type);

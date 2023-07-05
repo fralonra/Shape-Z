@@ -3,7 +3,10 @@ use crate::prelude::*;
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Project {
 
+    #[serde(skip)]
     pub tiles               : FxHashMap<(i32, i32, i32), Tile>,
+
+    pub objects             : FxHashMap<u16, Object>,
 
     pub aabb                : Option<AABB>,
 }
@@ -22,6 +25,7 @@ impl Project {
 
         Self {
             tiles,
+            objects         : FxHashMap::default(),
             aabb            : None
         }
     }
@@ -91,6 +95,6 @@ impl Project {
 
     /// The project tile size
     pub fn tile_size() -> usize {
-        49
+        50
     }
 }

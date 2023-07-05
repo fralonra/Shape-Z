@@ -1735,8 +1735,6 @@ dependencies = [
 [[package]]
 name = "theframework"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7fd7f781459d5c555e5b2120fd14e5c24abe2a9fa5c07721a0388829386e171"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
