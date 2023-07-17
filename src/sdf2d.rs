@@ -3,16 +3,16 @@ use crate::prelude::*;
 use strum_macros::{EnumIter, Display};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy, EnumIter, Display)]
-pub enum SDFType {
+pub enum SDF2DType {
     Box,
     Circle
 }
 
-use SDFType::*;
+use SDF2DType::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
-pub struct SDF {
-    sdf_type                    : SDFType,
+pub struct SDF2D {
+    sdf_type                    : SDF2DType,
 
     pub pattern                 : Pattern,
 
@@ -21,17 +21,17 @@ pub struct SDF {
     pub parameters              : Vec<Value>
 }
 
-impl SDF {
-    pub fn new(sdf_type: SDFType) -> Self {
+impl SDF2D {
+    pub fn new(sdf_type: SDF2DType) -> Self {
 
         let parameters= match sdf_type {
-            SDFType::Box => {
+            SDF2DType::Box => {
                 vec![
                     Int("Width".to_string(), 10, 1, 100),
                     Int("Height".to_string(), 10, 1, 100),
                 ]
             },
-            SDFType::Circle => {
+            SDF2DType::Circle => {
                 vec![
                     Int("Radius".to_string(), 10, 1, 100),
                 ]

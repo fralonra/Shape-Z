@@ -13,7 +13,7 @@ pub enum Command {
     CreateTile(i32, i32, i32),
     DeleteTile(i32, i32, i32),
     ApplyTool,
-    SDFSelected(SDFType)
+    SDF2DSelected(SDF2DType)
 }
 
 pub struct Context {

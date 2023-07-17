@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-
 pub struct Browser {
     rect                : Rect,
 
@@ -17,17 +16,14 @@ impl Widget for Browser {
 
         let mut create_tile_button = Box::new(TextButton::new());
         create_tile_button.set_text("BUILDER".to_string());
-        create_tile_button.set_has_state(false);
         widgets.push(create_tile_button);
 
         let mut delete_tile_button = Box::new(TextButton::new());
         delete_tile_button.set_text("DELETE".to_string());
-        delete_tile_button.set_has_state(false);
         widgets.push(delete_tile_button);
 
         let mut focus_tile_button = Box::new(TextButton::new());
         focus_tile_button.set_text("FOCUS".to_string());
-        focus_tile_button.set_has_state(false);
         widgets.push(focus_tile_button);
 
         let mut apply_tool_button = Box::new(TextButton::new());
@@ -106,7 +102,7 @@ impl Widget for Browser {
             left_rect.height = obj_height;
 
             if let Some(font) = &context.font {
-                ctx.draw.blend_text_rect(pixels, &left_rect.to_usize(), context.width, &font, 20.0, &"TOOL".to_string(), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
+                ctx.draw.blend_text_rect(pixels, &left_rect.to_usize(), context.width, &font, 18.0, &"TOOL".to_string(), &context.color_text, theframework::thedraw2d::TheTextAlignment::Center);
             }
         }
 
@@ -173,7 +169,7 @@ impl Widget for Browser {
             for (index, w) in self.widgets.iter_mut().enumerate() {
                 if w.touch_down(x, y, context, world) {
                     if index == 0 {
-
+                        context.curr_object.tools.push(Tool::new(ToolType::WallBuilder));
                     } else
                     if index == 1 {
 
@@ -205,6 +201,11 @@ impl Widget for Browser {
 
     fn touch_up(&mut self, x: f32, y: f32, context: &mut Context) -> bool {
 
+        for (_index, w) in self.widgets.iter_mut().enumerate() {
+            if w.touch_up(x, y, context) {
+                return true;
+            }
+        }
         false
     }
 

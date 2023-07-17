@@ -4,7 +4,7 @@ use crate::prelude::*;
 pub struct Shape {
 
     pub position                : Vec3f,
-    pub sdf                     : Vec<Option<SDF>>,
+    pub sdf                     : Vec<Option<SDF2D>>,
 
     pub size                    : i32,
 }
@@ -14,7 +14,7 @@ impl Shape {
 
         let mut sdf = vec![None; 5];
 
-        sdf[0] = Some(SDF::new(SDFType::Circle));
+        sdf[0] = Some(SDF2D::new(SDF2DType::Circle));
 
         Self {
             position            : Vec3f::zero(),
@@ -26,7 +26,7 @@ impl Shape {
     }
 
     /// Sets an SDF
-    pub fn set_sdf(&mut self, index: usize, primitive: Option<SDF>) {
+    pub fn set_sdf(&mut self, index: usize, primitive: Option<SDF2D>) {
         self.sdf[index] = primitive;
     }
 

@@ -19,7 +19,7 @@ pub mod pbr_path;
 pub mod material;
 pub mod material_preview;
 pub mod project;
-pub mod sdf;
+pub mod sdf2d;
 pub mod sdf3d;
 pub mod shape;
 pub mod value;
@@ -55,7 +55,7 @@ pub mod prelude {
     pub use crate::buffer::ColorBuffer;
     pub use crate::tile::Tile;
     pub use crate::palette::Palette;
-    pub use crate::tool::Tool;
+    pub use crate::tool::{Tool, ToolType};
     pub use crate::object::Object;
     // pub use crate::script::*;
     pub use crate::misc::*;
@@ -63,10 +63,10 @@ pub mod prelude {
     pub use crate::material::*;
     pub use crate::material_preview::MaterialPreview;
     pub use crate::project::*;
-    pub use crate::sdf::*;
+    pub use crate::sdf2d::{*, SDF2DType};
     pub use crate::sdf3d::{*, SDF3DType};
     pub use crate::shape::*;
-    pub use crate::value::{*, Value::*};
+    pub use crate::value::*;
 }
 
 use prelude::*;

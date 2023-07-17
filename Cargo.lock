@@ -870,9 +870,9 @@ dependencies = [
 
 [[package]]
 name = "maths-rs"
-version = "0.2.0"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d51349880e8208eebd433445da4d747d172a317ede8228a5c2a265e3f3d43e23"
+checksum = "5565d3570e34f3305788e6a50eb255d45972ff5878d9acc8e1bc4f7e5eba63df"
 dependencies = [
  "serde",
  "serde_json",

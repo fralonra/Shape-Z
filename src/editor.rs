@@ -327,7 +327,7 @@ impl MyEditor for Editor {
                     // self.context.curr_tool.apply(&self.context.engine, self.context.curr_keys.clone());
                     WORLD.lock().unwrap().apply(&self.context.curr_keys);
                 },
-                Command::SDFSelected(sdf_type) => {
+                Command::SDF2DSelected(sdf_type) => {
                     TOOL.lock().unwrap().sdf_triggered(*sdf_type);
                     self.ui.update_settings(&mut self.context);
                     //WORLD.lock().unwrap().curr_tool = self.context.curr_tool.clone();

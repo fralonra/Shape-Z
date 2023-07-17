@@ -78,7 +78,7 @@ pub trait Widget : Sync + Send {
     fn set_shape(&mut self, shape: Shape) {
     }
 
-    fn sdf_triggered(&mut self, sdf: SDFType) {
+    fn sdf_triggered(&mut self, sdf: SDF2DType) {
 
     }
 

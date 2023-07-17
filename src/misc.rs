@@ -71,14 +71,14 @@ use strum::IntoEnumIterator;
 
 /// Create the previews for the 2D primitives
 pub fn create_shape_previews() -> (Vec<u8>, Rect) {
-     let amount = SDFType::iter().len();
+     let amount = SDF2DType::iter().len();
 
     let size = 40;
     let mut rect = Rect::new(0, 0, size, size * amount);
     let mut buff = rect.alloc();
 
-    for sdf_type in SDFType::iter() {
-        let shape = SDF::new(sdf_type);
+    for sdf_type in SDF2DType::iter() {
+        let shape = SDF2D::new(sdf_type);
         shape.create_preview(&mut buff, rect, size);
         rect.y += size;
     }

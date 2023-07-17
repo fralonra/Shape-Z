@@ -16,7 +16,6 @@ pub struct ShapeSelector {
     curr_index                  : Option<usize>
 }
 
-use ShapeSelectorMode::*;
 use strum_macros::Display;
 
 impl Widget for ShapeSelector {
@@ -28,7 +27,7 @@ impl Widget for ShapeSelector {
         Self {
             rect                : Rect::empty(),
 
-            mode                : SDF,
+            mode                : ShapeSelectorMode::SDF,
 
             sdf_previews,
 
@@ -78,10 +77,10 @@ impl Widget for ShapeSelector {
 
         let index = (y as usize - self.rect.y) / 40;
 
-        if self.mode == SDF {
-            for (sdf_index, sdf) in SDFType::iter().enumerate() {
+        if self.mode == ShapeSelectorMode::SDF {
+            for (sdf_index, sdf) in SDF2DType::iter().enumerate() {
                 if sdf_index == index {
-                    context.cmd = Some(Command::SDFSelected(sdf));
+                    context.cmd = Some(Command::SDF2DSelected(sdf));
                     self.curr_index = Some(index);
                     return true;
                 }

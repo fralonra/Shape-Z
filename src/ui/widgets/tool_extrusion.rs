@@ -249,9 +249,9 @@ impl Widget for ExtrusionTool {
         world.needs_update = true;
     }
 
-    fn sdf_triggered(&mut self, sdf: SDFType) {
+    fn sdf_triggered(&mut self, sdf: SDF2DType) {
         if let Some(curr_sdf_index) = self.curr_sdf_index {
-            self.shape.sdf[curr_sdf_index] = Some(SDF::new(sdf));
+            self.shape.sdf[curr_sdf_index] = Some(SDF2D::new(sdf));
             if let Some(sdf) = &self.shape.sdf[curr_sdf_index] {
                 self.value_list.set_value_list(sdf.parameters.clone());
             }

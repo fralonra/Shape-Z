@@ -4,8 +4,12 @@ use crate::prelude::*;
 pub enum Value {
     // Name, Value, Min, Max
     Int(String, i32, i32, i32),
-    Float(String, f32, f32, f32)
+    Float(String, f32, f32, f32),
+    Sdf2D(SDF2D),
+    Sdf3D(SDF3D),
 }
+
+pub use Value::*;
 
 impl Value {
     /*
