@@ -5,7 +5,7 @@
         <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
         <Icon Id="ShapeZ.exe" SourceFile=".\build\windows\Shape-Z.ico"/>
         <WixVariable Id="WixUILicenseRtf" Value=".\build\windows\wix\license.rtf"/>
-        <Property Id="ARPPRODUCTICON" Value=".\Shape-Z.exe"/>
+        <Property Id="ARPPRODUCTICON" Value="ShapeZ.exe"/>
         <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>
         <MediaTemplate EmbedCab="yes"/>
         <UIRef Id="WixUI_InstallDir"/>
