@@ -1,65 +1,74 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Name="ShapeZ" Id="*" UpgradeCode="02461b42-2c06-49d3-9d28-0e68c3aede40" Language="1033" Version="0.1.0" Manufacturer="ShapeZ">
+<?xml version="1.0" encoding="windows-1252"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+    <Product Name="ShapeZ"
+             Id="*"
+             UpgradeCode="02461b42-2c06-49d3-9d28-0e68c3aede40"
+             Language="1033"
+             Codepage="1252"
+             Version="0.1.0"
+             Manufacturer="Markus Moenig">
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
         <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
-        <Icon Id="ShapeZ.exe" SourceFile=".\build\windows\Shape-Z.ico"/>
+        <Icon Id="ShapeZIcon" SourceFile=".\build\windows\Shape-Z.ico"/>
         <WixVariable Id="WixUILicenseRtf" Value=".\build\windows\wix\license.rtf"/>
-        <Property Id="ARPPRODUCTICON" Value="ShapeZ.exe"/>
+        <Property Id="ARPPRODUCTICON" Value="ShapeZIcon"/>
         <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Eldiron"/>
+        <Property Id="WixShellExecTarget" Value="[#EldironExeFile]"/>
+        <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes"/>
         <MediaTemplate EmbedCab="yes"/>
-        <UIRef Id="WixUI_InstallDir"/>
 
-        <Feature Id="ProductFeature" Title="ShapeZ" Level="1">
-            <ComponentRef Id="ShapeZExe"/>
-            <ComponentRef Id="ShapeZShortcut"/>
-            <ComponentRef Id="ModifyPathEnv"/>
-            <ComponentRef Id="ContextMenu"/>
-        </Feature>
+        <UI>
+            <UIRef Id="WixUI_InstallDir"/>
+            <Publish Dialog="ExitDialog"
+                     Control="Finish" 
+                     Event="DoAction" 
+                     Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+        </UI>
 
-        <!-- Create directories -->
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFiles64Folder">
                 <Directory Id="INSTALLDIR" Name="ShapeZ"/>
             </Directory>
             <Directory Id="ProgramMenuFolder">
-                <Directory Id="ShapeZProgramMenu" Name="ShapeZ"/>
+                <Directory Id="ProgramMenu" Name="ShapeZ"/>
             </Directory>
         </Directory>
 
-        <!-- Application binaries -->
         <DirectoryRef Id="INSTALLDIR">
             <Component Id="ShapeZExe" Guid="*">
                 <File Id="ShapeZExeFile" Source=".\Shape-Z.exe" Name="Shape-Z.exe" KeyPath="yes" Checksum="yes"/>
             </Component>
         </DirectoryRef>
 
-        <DirectoryRef Id="ShapeZProgramMenu">
-            <!-- Application shortcut -->
-            <Component Id="ShapeZShortcut" Guid="e68681ee-1ed1-4f85-bb64-3c53d841d2c5">
-                <Shortcut Id="ShapeZShortcutFile" Icon="ShapeZ.exe" Name="ShapeZ" Description="Description" Target="[INSTALLDIR]Shape-Z.exe" WorkingDirectory="INSTALLDIR"/>
-                <RemoveFolder Id="ShapeZProgramMenu" On="uninstall"/>
-                <RegistryValue Root="HKCU" Key="Software\Microsoft\ShapeZ" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        <DirectoryRef Id="ProgramMenu">
+            <Component Id="Shortcut" Guid="*">
+                <Shortcut Id="ShortcutFile"
+                          Icon="ShapeZIcon"
+                          Name="ShapeZ"
+                          Description="A procedural voxel editor"
+                          Target="[!ShapeZExeFile]"
+                          WorkingDirectory="INSTALLDIR"/>
+                <Shortcut Id="UninstallProduct"
+                          Name="Uninstall Shape-Z"
+                          Target="[SystemFolder]msiexec.exe"
+                          Arguments="/x [ProductCode]"
+                          Description="Uninstalls Shape-Z" />
+                <RemoveFolder Id="ProgramMenu" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\MarkusMoenig\ShapeZ" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
         </DirectoryRef>
 
         <DirectoryRef Id="INSTALLDIR">
-            <!-- Add to PATH -->
             <Component Id="ModifyPathEnv" Guid="7e1e1f88-826e-4a58-b9e5-343367a0c113" KeyPath="yes">
                 <Environment Id="PathEnv" Value="[INSTALLDIR]" Name="PATH" Permanent="no" Part="first" Action="set" System="yes"/>
             </Component>
         </DirectoryRef>
 
-        <DirectoryRef Id="TARGETDIR">
-            <!-- Add context menu -->
-            <Component Id="ContextMenu" Guid="21b2db49-74dd-45d7-affb-89d049f8e924">
-                <RegistryKey Root="HKCU" Key="Software\Classes\Directory\Background\shell\Open ShapeZ here\command">
-                    <RegistryValue Type="string" Value="[INSTALLDIR]Shape-Z.exe &quot;%V&quot;" KeyPath="yes"/>
-                </RegistryKey>
-                <RegistryKey Root="HKCU" Key="Software\Classes\Directory\Background\shell\Open ShapeZ here">
-                    <RegistryValue Type="string" Name="Icon" Value="[INSTALLDIR]Shape-Z.exe"/>
-                </RegistryKey>
-            </Component>
-        </DirectoryRef>
+        <Feature Id="MainApplicatiton" Title="Main Application" Level="1">
+            <ComponentRef Id="ShapeZExe"/>
+            <ComponentRef Id="Shortcut"/>
+            <ComponentRef Id="ModifyPathEnv"/>
+        </Feature>
     </Product>
 </Wix>
