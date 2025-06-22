@@ -2,79 +2,104 @@
 
 use theframework::*;
 
+pub mod context;
 pub mod editor;
-pub mod ui;
-pub mod pattern;
-pub mod property;
-pub mod hitrecord;
-pub mod world;
-pub mod camera;
-pub mod buffer;
-pub mod tile;
-pub mod palette;
-pub mod tool;
-// pub mod script;
+// pub mod mapeditor;
 pub mod misc;
-pub mod pbr_path;
-pub mod material;
-pub mod material_preview;
+pub mod modeleditor;
 pub mod project;
-pub mod sdf2d;
-pub mod sdf3d;
-pub mod shape;
-pub mod value;
-pub mod object;
+pub mod voxel;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
 #[folder = "embedded/"]
-#[exclude = ".txt"]
-#[exclude = ".DS_Store"]
+#[exclude = "*.txt"]
+#[exclude = "*.DS_Store"]
 pub struct Embedded;
 
+pub type F = f32;
+pub const F_PI: F = std::f32::consts::PI;
+pub const F_TAU: F = std::f32::consts::TAU;
+pub const F_FRAC_PI_2: F = std::f32::consts::FRAC_PI_2;
+pub const F_FRAC_1_PI: F = std::f32::consts::FRAC_1_PI;
+pub const F_E: F = std::f32::consts::E;
+pub const F_SQRT_2: F = std::f32::consts::SQRT_2;
+pub const F_MIN: F = f32::MIN;
+pub const F_MAX: F = f32::MAX;
+
+pub type Color = [F; 4];
+
+#[allow(ambiguous_glob_reexports)]
 pub mod prelude {
-
-    pub use theframework::TheContext;
-
-    pub use crate::Embedded;
-    pub use rustc_hash::FxHashMap;
-    pub use uuid::Uuid;
     pub use serde::{Deserialize, Serialize};
 
-    pub use maths_rs::prelude::*;
+    pub use std::sync::{LazyLock, RwLock};
+    pub use theframework::prelude::*;
 
-    pub use crate::ui::prelude::*;
-    pub use crate::ui::UI;
-
-    pub use crate::editor::{Editor, WORLD};
-    pub use crate::pattern::*;
-    pub use crate::property::*;
-    pub use crate::hitrecord::HitRecord;
-    pub use crate::world::World;
-    pub use crate::camera::*;
-    pub use crate::buffer::ColorBuffer;
-    pub use crate::tile::Tile;
-    pub use crate::palette::Palette;
-    pub use crate::tool::{Tool, ToolType};
-    pub use crate::object::Object;
-    // pub use crate::script::*;
-    pub use crate::misc::*;
-    pub use crate::pbr_path::*;
-    pub use crate::material::*;
-    pub use crate::material_preview::MaterialPreview;
+    pub use crate::context::*;
+    pub use crate::misc::UpdateTracker;
+    pub use crate::modeleditor::*;
     pub use crate::project::*;
-    pub use crate::sdf2d::{*, SDF2DType};
-    pub use crate::sdf3d::{*, SDF3DType};
-    pub use crate::shape::*;
-    pub use crate::value::*;
+    pub use crate::{Color, F};
+
+    pub use crate::voxel::camera::Camera;
+    pub use crate::voxel::camera::pinhole::Pinhole;
+    pub use crate::voxel::grid::VoxelGrid;
+    pub use crate::voxel::ray::Ray;
+    pub use crate::voxel::renderbuffer::RenderBuffer;
+    pub use crate::voxel::renderer::Renderer;
+    pub use crate::voxel::renderer::pbr::PBR;
+    /*
+    pub use crate::codeeditor::*;
+    pub use crate::effectpicker::*;
+    pub use crate::mapeditor::*;
+    pub use crate::materialpicker::*;
+    pub use crate::misc::*;
+    pub use crate::panels::*;
+    // pub use crate::previewview::*;
+    pub use crate::shapepicker::*;
+    pub use crate::sidebar::*;
+    pub use crate::tilemapeditor::*;
+    pub use crate::tilepicker::*;
+    pub use crate::toollist::*;
+    pub use crate::undo::material_undo::*;
+    pub use crate::undo::palette_undo::*;
+    pub use crate::undo::region_undo::*;
+    pub use crate::undo::*;
+    pub use crate::utils::*;
+
+    pub use crate::tools::code::CodeTool;
+    pub use crate::tools::game::GameTool;
+    pub use crate::tools::linedef::LinedefTool;
+    pub use crate::tools::sector::SectorTool;
+    pub use crate::tools::selection::SelectionTool;
+    pub use crate::tools::tileset::TilesetTool;
+    pub use crate::tools::vertex::VertexTool;
+
+    pub use crate::tools::*;
+
+    pub use crate::configeditor::ConfigEditor;
+    pub use crate::customcamera::{CustomCamera, CustomMoveAction};
+    pub use crate::infoviewer::InfoViewer;
+    pub use crate::nodeeditor::{NodeContext, NodeEditor};
+    pub use crate::rendereditor::{RenderEditor, RenderMoveAction};
+    pub use crate::worldeditor::WorldEditor;
+    pub use toml::Table;
+    */
 }
 
-use prelude::*;
+use crate::editor::Editor;
 
 fn main() {
+    let args: Vec<_> = std::env::args().collect();
+
+    // unsafe {
+    //     std::env::set_var("RUST_BACKTRACE", "1");
+    // }
 
     let editor = Editor::new();
     let mut app = TheApp::new();
+    app.set_cmd_line_args(args);
 
-    _ = app.run(Box::new(editor));
+    let () = app.run(Box::new(editor));
 }

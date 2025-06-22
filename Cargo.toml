@@ -1,52 +1,59 @@
 [package]
 name = "shape-z"
-version = "0.1.0"
-edition = "2021"
-description = "A procedural voxel editor."
+edition = "2024"
+version = "0.8.23"
+license = "MIT"
+authors = ["Markus Moenig"]
+description = "An Voxel editor and renderer."
+
+[[bin]]
+name = "forgedthoughts"
+path = "src/main.rs"
 
 [dependencies]
-noise = "0.8.1"
-rustc-hash = "1.1.0"
-rayon = "1.7.0"
-serde = { version = "1.0.159", features = ["derive"] }
-serde_json = "1.0.96"
-maths-rs = { version = "0.2.4", features = ["short_types", "short_hand_constructors", "casts", "serde"] }
-# theframework = "0.1.0"
-theframework = { path = "../theframework" }
-lazy_static = "1.4.0"
-rust-embed = { version = "6.4.0", default-features = true, features = ["include-exclude"] }
-fontdue = "0.7.2"
-png = "0.17.8"
-# rhai = { version = "1.14.0", default-features = true, features = ["only_i32", "f32_float", "sync"] }
-rand = "0.8.5"
-strum = "0.25"
-strum_macros = "0.25.0"
-#code_editor = "0.3.9"
-#code_editor = { path = "../../code_editor/code_editor" }
 
-[dependencies.uuid]
-version = "1.3.1"
-features = [
-    "v4",                # Lets you generate random UUIDs
-    "fast-rng",          # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-    "serde"
-]
+rusterix = { version = "0.2.8", git = "https://github.com/markusmoenig/Rusterix" }
+# rusterix = { path = "../../Rusterix" }
 
-# When building for Xcode
+theframework = { version = "0.1.40", git = "https://github.com/markusmoenig/TheFramework", features = [
+    "ui",
+], default-features = true }
+
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+vectorize = "0.2.0"
+rust-embed = { version = "8", default-features = true, features = [
+    "include-exclude",
+] }
+rayon = "1"
+png = "0.17"
+open = "5.0.1"
+fontdue = "0.9.3"
+self_update = { version = "0.39.0", features = [
+    "archive-tar",
+    "compression-flate2",
+] }
+indexmap = { version = "2", features = ["serde"], default-features = true }
+vek = { version = "0.17.1", default-features = true }
+regex = "1.11.1"
+arboard = "3.4.1"
+toml = "0.8.20"
+# lazy_static = "1.5.0"
+rand = "0.9"
+num_cpus = "1.16.0"
+
+[package.metadata.bundle.bin.eldiron]
+name = "Eldiron"
+identifier = "com.moenig.eldiron"
+icon = ["../build/Eldiron.icns"]
+resources = []
+copyright = "Copyright (c) Markus Moenig 2025. All rights reserved."
+category = "Game"
+short_description = "A game creator for classical RPGs with modern features."
+long_description = """
+Create classical RPGs with Eldiron.
+"""
 
 # [lib]
 # name = "rustapi"
 # crate-type = ["staticlib"]
-
-[package.metadata.bundle]
-name = "Shape-Z"
-identifier = "com.moenig.shapez"
-icon = ["build/logo.png"]
-copyright = "Copyright (c) Markus Moenig 2022. All rights reserved."
-category = "Game"
-short_description = "A procedural voxel editor."
-long_description = """
-A procedural voxel editor which will allow the creation of pixel art
-and realistic renderings based on script based tools which utilize SDF shapes.
-"""
