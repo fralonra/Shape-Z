@@ -57,6 +57,18 @@ impl Renderer for PBR {
         let mut mask = Vec3::<F>::one();
 
         let mut ray = camera.create_ray(uv, resolution, Vec2::new(rng.random(), rng.random()));
+
+        let hit = grid.dda(&ray);
+
+        if let Some(v) = hit {
+            if v == 2 {
+                acc.x = 1.0;
+            } else {
+                acc.x = 0.5;
+                acc.y = 0.5;
+                acc.z = 0.5;
+            }
+        }
         /*
         // let eps = model.voxel_size_min();
 

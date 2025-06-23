@@ -22,7 +22,8 @@ pub static RENDERER: LazyLock<Arc<Box<dyn Renderer>>> =
     LazyLock::new(|| Arc::new(Box::new(PBR::new())));
 pub static CAMERA: LazyLock<Arc<Box<dyn Camera>>> =
     LazyLock::new(|| Arc::new(Box::new(Pinhole::new())));
-pub static VOXELGRID: LazyLock<Arc<VoxelGrid>> = LazyLock::new(|| Arc::new(VoxelGrid::default()));
+pub static VOXELGRID: LazyLock<Arc<RwLock<VoxelGrid>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(VoxelGrid::default())));
 
 pub static RUSTERIX: LazyLock<RwLock<Rusterix>> =
     LazyLock::new(|| RwLock::new(Rusterix::default()));
@@ -146,10 +147,8 @@ impl TheTrait for Editor {
     }
 
     fn init(&mut self, _ctx: &mut TheContext) {
-        // let mut grid = Arc::clone(&VOXELGRID);
-
-        //grid.add_sphere(Vec3::new(0.0, 0.5, 0.0), 1.0, 1);
-
+        let mut grid = VOXELGRID.write().unwrap();
+        grid.add_sphere(Vec3::new(0.0, 0.0, 0.0), 0.5, 2);
         /*
         let updater = Arc::clone(&self.self_updater);
         let tx = self.self_update_tx.clone();

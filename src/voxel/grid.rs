@@ -1,188 +1,224 @@
+use crate::prelude::*;
 use theframework::prelude::FxHashMap;
+use vek::{Aabb, Vec3};
 
-use crate::F;
-use vek::Aabb;
-use vek::Vec3;
-
-#[derive(Clone, Debug)]
 pub struct VoxelGrid {
-    voxels: FxHashMap<(i32, i32, i32), u8>, // sparse storage
-    bounds: [F; 3],                         // world-space extents  (X, Y, Z)
-    density: usize,                         // voxels per world unit
-    size: [usize; 3],                       // derived voxel dims   (nx, ny, nz)
+    voxels: FxHashMap<(i32, i32, i32), u8>,
+    bounds: [F; 3], // world-space size   (units)
+    size: [usize; 3], // voxel resolution   (nx,ny,nz)
+                    // density: usize,   // voxels per world-unit
 }
 
 impl Default for VoxelGrid {
-    /// Creates an empty 2×2×2 grid with density = 50 voxel per unit.
     fn default() -> Self {
-        Self::new([2.0 as F, 2.0 as F, 2.0 as F], 64)
+        Self::new([2.0, 2.0, 2.0], 128)
     }
 }
 
+/* ──────────────────────────────────────────────────────────────────────── */
+
 impl VoxelGrid {
-    /// Create an *empty* grid covering `bounds` (world units) with
-    /// `density` voxels per unit.
     pub fn new(bounds: [F; 3], density: usize) -> Self {
-        Self {
-            voxels: FxHashMap::default(),
-            size: Self::calc_size(bounds, density),
-            bounds,
-            density,
-        }
-    }
-
-    /// Change voxel density (voxels per unit).
-    /// **Warning:** existing voxels are cleared because their indices
-    /// are no longer valid in the new resolution.
-    pub fn set_density(&mut self, density: usize) {
-        if density == 0 || density == self.density {
-            return;
-        }
-        self.density = density;
-        self.size = Self::calc_size(self.bounds, density);
-        self.voxels.clear();
-    }
-
-    /// Change world-space bounds (in units).
-    /// **Warning:** clears all stored voxels for the same reason as above.
-    pub fn set_bounds(&mut self, bounds: [F; 3]) {
-        self.bounds = bounds;
-        self.size = Self::calc_size(bounds, self.density);
-        self.voxels.clear();
-    }
-
-    #[inline]
-    fn calc_size(bounds: [F; 3], density: usize) -> [usize; 3] {
-        [
+        let sz = [
             (bounds[0] * density as F).ceil() as usize,
             (bounds[1] * density as F).ceil() as usize,
             (bounds[2] * density as F).ceil() as usize,
-        ]
+        ];
+        Self {
+            voxels: FxHashMap::default(),
+            bounds,
+            size: sz,
+            // density,
+        }
     }
 
-    /*---------------------------------------------------------------------
-    | basic sparse access
-    *--------------------------------------------------------------------*/
+    /* ── constants & helpers ─────────────────────────────────────────── */
 
     #[inline]
-    pub fn get(&self, x: i32, y: i32, z: i32) -> Option<u8> {
-        self.voxels.get(&(x, y, z)).copied()
-    }
-
-    #[inline]
-    pub fn set(&mut self, x: i32, y: i32, z: i32, value: u8) {
-        self.voxels.insert((x, y, z), value);
-    }
-
-    pub fn clear(&mut self) {
-        self.voxels.clear();
-    }
-    pub fn len(&self) -> usize {
-        self.voxels.len()
-    }
-    pub fn is_empty(&self) -> bool {
-        self.voxels.is_empty()
-    }
-    pub fn iter(&self) -> impl Iterator<Item = (&(i32, i32, i32), &u8)> {
-        self.voxels.iter()
-    }
-
-    /// Convert voxel indices to world-space *cell centre*.
-    /// Bottom-aligned Y, centred XZ (matches your dense `ModelBuffer`).
-    #[inline]
-    pub fn index_to_world(&self, x: i32, y: i32, z: i32) -> Vec3<F> {
-        // single voxel size
-        let vs = Vec3::new(
+    fn vs(&self) -> Vec3<F> {
+        Vec3::new(
             self.bounds[0] / self.size[0] as F,
             self.bounds[1] / self.size[1] as F,
             self.bounds[2] / self.size[2] as F,
-        );
-
-        Vec3::new(
-            x as F * vs.x - self.bounds[0] * 0.5 + vs.x * 0.5, // centre X
-            y as F * vs.y + vs.y * 0.5,                        // centre Y
-            z as F * vs.z - self.bounds[2] * 0.5 + vs.z * 0.5, // centre Z
         )
     }
 
-    /// Convert world-space position to voxel indices.
-    /// Returns `None` if outside the grid.
     #[inline]
-    pub fn world_to_index(&self, p: Vec3<F>) -> Option<(i32, i32, i32)> {
-        // shift to positive space (XZ centred, Y bottom-aligned)
-        let shifted = Vec3::new(p.x + self.bounds[0] * 0.5, p.y, p.z + self.bounds[2] * 0.5);
+    fn bbox(&self) -> Aabb<F> {
+        let h = Vec3::from(self.bounds) * 0.5;
+        Aabb { min: -h, max: h } // centred in **all** axes
+    }
 
-        // scale to voxel coords
-        let scale = Vec3::new(
-            self.size[0] as F / self.bounds[0],
-            self.size[1] as F / self.bounds[1],
-            self.size[2] as F / self.bounds[2],
-        );
-        let v = shifted * scale;
+    /* ── world  ↔  index ─────────────────────────────────────────────── */
 
-        let (x, y, z) = (v.x.floor() as i32, v.y.floor() as i32, v.z.floor() as i32);
+    /// world **corner** of voxel `(ix,iy,iz)`
+    #[inline]
+    fn index_to_corner(&self, ix: i32, iy: i32, iz: i32) -> Vec3<F> {
+        (Vec3::new(ix as F, iy as F, iz as F) * self.vs()) - Vec3::from(self.bounds) * 0.5
+    }
 
-        if x >= 0
-            && y >= 0
-            && z >= 0
-            && x < self.size[0] as i32
-            && y < self.size[1] as i32
-            && z < self.size[2] as i32
+    /// world **centre** of voxel `(ix,iy,iz)`
+    #[inline]
+    fn index_to_centre(&self, ix: i32, iy: i32, iz: i32) -> Vec3<F> {
+        self.index_to_corner(ix, iy, iz) + self.vs() * 0.5
+    }
+
+    /// world → voxel index (**corner-based**, floor)
+    /// length of a voxel along each axis (world units)
+    #[inline]
+    fn voxel_size(&self) -> Vec3<F> {
+        Vec3::new(
+            self.bounds[0] / self.size[0] as F,
+            self.bounds[1] / self.size[1] as F,
+            self.bounds[2] / self.size[2] as F,
+        )
+    }
+
+    /// world position → voxel corner index  (returns None if outside)
+    #[inline]
+    fn world_to_index(&self, p: Vec3<F>) -> Option<(i32, i32, i32)> {
+        // shift the grid so its centre is at the origin → everything becomes ≥0
+        let shifted = p + Vec3::new(self.bounds[0], self.bounds[1], self.bounds[2]) * 0.5;
+
+        // divide by voxel size & floor to get integer coordinates
+        let vs = self.voxel_size();
+        let v = (shifted / vs).map(|c| c.floor() as i32);
+
+        // manual bounds check (avoids unstable cmp… intrinsics)
+        if v.x >= 0
+            && v.x < self.size[0] as i32
+            && v.y >= 0
+            && v.y < self.size[1] as i32
+            && v.z >= 0
+            && v.z < self.size[2] as i32
         {
-            Some((x, y, z))
+            Some((v.x, v.y, v.z))
         } else {
             None
         }
     }
 
-    /*---------------------------------------------------------------------
-    | optional helpers (voxel size & bbox)
-    *--------------------------------------------------------------------*/
+    /* ── sparse access ──────────────────────────────────────────────── */
 
-    /// Average voxel edge length (world units).
-    pub fn voxel_size(&self) -> F {
-        let vs = Vec3::new(
-            self.bounds[0] / self.size[0] as F,
-            self.bounds[1] / self.size[1] as F,
-            self.bounds[2] / self.size[2] as F,
-        );
-        (vs.x + vs.y + vs.z) / 3.0
+    #[inline]
+    pub fn set(&mut self, x: i32, y: i32, z: i32, m: u8) {
+        self.voxels.insert((x, y, z), m);
+    }
+    #[inline]
+    pub fn get(&self, x: i32, y: i32, z: i32) -> Option<u8> {
+        self.voxels.get(&(x, y, z)).copied()
     }
 
-    /// Axis-aligned bounding box centred in XZ, bottom-aligned in Y.
-    pub fn bbox(&self) -> Aabb<F> {
-        Aabb {
-            min: Vec3::new(-self.bounds[0] * 0.5, 0.0, -self.bounds[2] * 0.5),
-            max: Vec3::new(self.bounds[0] * 0.5, self.bounds[1], self.bounds[2] * 0.5),
-        }
-    }
+    /* ── primitives ─────────────────────────────────────────────────── */
 
-    /// Adds a sphere at the given position
-    pub fn add_sphere(&mut self, center: Vec3<F>, radius: F, value: u8) {
-        let r2 = radius * radius;
-
-        // Compute bounding box in voxel index space
-        let min = center - Vec3::broadcast(radius);
-        let max = center + Vec3::broadcast(radius);
-
-        let min_ix = self.world_to_index(min).unwrap_or((0, 0, 0));
-        let max_ix = self.world_to_index(max).unwrap_or((
-            self.size[0] as i32 - 1,
-            self.size[1] as i32 - 1,
-            self.size[2] as i32 - 1,
-        ));
+    /// Fills a solid sphere (centre & radius in *world* units).
+    pub fn add_sphere(&mut self, centre: Vec3<F>, r: F, mat: u8) {
+        let r2 = r * r;
+        let min_ix = self
+            .world_to_index(centre - Vec3::broadcast(r))
+            .unwrap_or((0, 0, 0));
+        let max_ix = self
+            .world_to_index(centre + Vec3::broadcast(r) - 1e-6)
+            .unwrap_or((
+                self.size[0] as i32 - 1,
+                self.size[1] as i32 - 1,
+                self.size[2] as i32 - 1,
+            ));
 
         for z in min_ix.2..=max_ix.2 {
             for y in min_ix.1..=max_ix.1 {
                 for x in min_ix.0..=max_ix.0 {
-                    let world = self.index_to_world(x, y, z);
-                    let dist2 = (world - center).magnitude_squared();
-
-                    if dist2 <= r2 {
-                        self.set(x, y, z, value);
+                    if (self.index_to_centre(x, y, z) - centre).magnitude_squared() <= r2 {
+                        self.set(x, y, z, mat);
                     }
                 }
             }
         }
+    }
+
+    /* ── voxel-accurate DDA ──────────────────────────────────────────── */
+
+    pub fn dda(&self, ray: &Ray) -> Option<u8> {
+        /* 1. clip against grid AABB */
+        let (mut t_min, t_max) = ray.intersect_aabb(&self.bbox())?;
+        if t_min < 0.0 {
+            t_min = 0.0;
+        }
+
+        /* 2. first voxel the ray is inside */
+        let eps = 1e-4;
+        let p_w = ray.at(&(t_min + eps));
+        let (ix, iy, iz) = self.world_to_index(p_w)?;
+
+        /* 3. DDA pre-computation */
+        let vs = self.vs();
+        let step_i = ray.dir.map(|d| if d < 0.0 { -1 } else { 1 });
+        let inv_dir = ray.dir.map(|d| 1.0 / d.abs().max(1e-30));
+        let t_delta = vs * inv_dir; // Δt to cross one voxel
+
+        // distance to first voxel boundary
+        let centre = self.index_to_centre(ix, iy, iz);
+        let mut t_max_v = Vec3::zero();
+        for a in 0..3 {
+            let half = vs[a] * 0.5;
+            let bound = if step_i[a] > 0 {
+                centre[a] + half
+            } else {
+                centre[a] - half
+            };
+            t_max_v[a] = (bound - p_w[a]).abs() * inv_dir[a];
+        }
+
+        /* 4. integer bounds */
+        let max_i = Vec3::new(
+            self.size[0] as i32 - 1,
+            self.size[1] as i32 - 1,
+            self.size[2] as i32 - 1,
+        );
+
+        /* 5. loop */
+        let mut pos = Vec3::new(ix, iy, iz);
+        let mut t = t_min + eps;
+        let t_end = t_max.min(1_000.0);
+
+        while t <= t_end {
+            /* out-of-bounds test (all axes identical) */
+            if pos.x < 0
+                || pos.y < 0
+                || pos.z < 0
+                || pos.x > max_i.x
+                || pos.y > max_i.y
+                || pos.z > max_i.z
+            {
+                return None;
+            }
+
+            /* hit */
+            if let Some(m) = self.get(pos.x, pos.y, pos.z) {
+                return Some(m);
+            }
+
+            /* advance to next voxel */
+            if t_max_v.x < t_max_v.y {
+                if t_max_v.x < t_max_v.z {
+                    pos.x += step_i.x;
+                    t = t_max_v.x;
+                    t_max_v.x += t_delta.x;
+                } else {
+                    pos.z += step_i.z;
+                    t = t_max_v.z;
+                    t_max_v.z += t_delta.z;
+                }
+            } else if t_max_v.y < t_max_v.z {
+                pos.y += step_i.y;
+                t = t_max_v.y;
+                t_max_v.y += t_delta.y;
+            } else {
+                pos.z += step_i.z;
+                t = t_max_v.z;
+                t_max_v.z += t_delta.z;
+            }
+        }
+        None
     }
 }

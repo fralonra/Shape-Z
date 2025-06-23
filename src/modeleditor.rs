@@ -48,7 +48,7 @@ impl ModelEditor {
     pub fn render(
         &self,
         buffer: &mut Arc<Mutex<RenderBuffer>>,
-        grid: &Arc<VoxelGrid>,
+        grid: &Arc<RwLock<VoxelGrid>>,
         renderer: &Arc<Box<dyn Renderer>>,
         camera: &Arc<Box<dyn Camera>>,
     ) {
@@ -67,7 +67,7 @@ impl ModelEditor {
         // let ft_arc = Arc::clone(&ft);
         let grid_arc = Arc::clone(grid);
         let renderer_arc = Arc::clone(renderer);
-        let camera_arc = Arc::clone(camera);
+        // let camera_arc = Arc::clone(camera);
 
         // Create threads
         let mut handles = vec![];
@@ -75,7 +75,7 @@ impl ModelEditor {
             // let ft = Arc::clone(&ft_arc);
             let grid = Arc::clone(&grid_arc);
             let renderer = Arc::clone(&renderer_arc);
-            let camera = Arc::clone(&camera);
+            let camera = Arc::clone(camera);
 
             let tiles_mutex = Arc::clone(&tiles_mutex);
             let buffer_mutex = Arc::clone(buffer);
@@ -91,8 +91,9 @@ impl ModelEditor {
                         // Release mutex before processing tile
                         drop(tiles);
 
-                        let grid_ref: &VoxelGrid = &grid;
-                        let camera_ref: &Box<dyn Camera> = &camera;
+                        let grid_guard = grid.read().unwrap();
+                        let grid_ref: &VoxelGrid = &grid_guard;
+                        let camera_ref = &camera;
 
                         // Process tile
                         for h in 0..tile.height {
