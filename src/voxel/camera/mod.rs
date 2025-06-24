@@ -1,3 +1,4 @@
+pub mod orbit;
 pub mod pinhole;
 
 use crate::prelude::*;
@@ -20,6 +21,12 @@ pub trait Camera: Send + Sync {
 
     /// Set the fov of the camera.
     fn set_fov(&mut self, fov: F) {}
+
+    /// Rotate the camera around its center point using mouse delta in screen space.
+    fn rotate(&mut self, delta: Vec2<f32>) {}
+
+    /// Zoom the camera in or out based on vertical mouse delta
+    fn zoom(&mut self, delta: f32) {}
 
     /// Create a ray.
     fn create_ray(&self, uv: Vec2<F>, screen_size: Vec2<F>, offset: Vec2<F>) -> Ray;

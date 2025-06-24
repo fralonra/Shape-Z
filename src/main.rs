@@ -8,12 +8,12 @@ pub mod editor;
 pub mod misc;
 pub mod modeleditor;
 pub mod project;
+pub mod utils;
 pub mod voxel;
 
 use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
 #[folder = "embedded/"]
-#[exclude = "*.txt"]
 #[exclude = "*.DS_Store"]
 pub struct Embedded;
 
@@ -43,12 +43,17 @@ pub mod prelude {
     pub use crate::{Color, F};
 
     pub use crate::voxel::camera::Camera;
+    pub use crate::voxel::camera::orbit::Orbit;
     pub use crate::voxel::camera::pinhole::Pinhole;
     pub use crate::voxel::grid::VoxelGrid;
+    pub use crate::voxel::palette::{Material, Palette};
     pub use crate::voxel::ray::Ray;
     pub use crate::voxel::renderbuffer::RenderBuffer;
     pub use crate::voxel::renderer::Renderer;
+    pub use crate::voxel::renderer::editshader::EditShader;
     pub use crate::voxel::renderer::pbr::PBR;
+    pub use crate::voxel::{Face, HitRecord, HitType};
+
     /*
     pub use crate::codeeditor::*;
     pub use crate::effectpicker::*;

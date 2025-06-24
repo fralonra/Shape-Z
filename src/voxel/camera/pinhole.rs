@@ -15,7 +15,7 @@ impl Camera for Pinhole {
         Self: Sized,
     {
         Self {
-            origin: Vec3::new(0.0, 0.0, 6.0),
+            origin: Vec3::new(0.0, 0.0, 5.0),
             center: Vec3::new(0.0, 0.0, 0.0),
             fov: 70.0,
         }

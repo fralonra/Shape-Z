@@ -1,20 +1,24 @@
 use crate::prelude::*;
-use rusterix::{D2PreviewBuilder, GridShader, Rasterizer, Scene, Shader, camera};
+use crate::utils::reset_render;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use vek::Vec2;
 
-use crate::editor::{CAMERA, RENDERBUFFER, RENDERER, VOXELGRID};
+use crate::editor::{CAMERA, PALETTE, RENDERBUFFER, RENDERER, VOXELGRID};
 
-pub struct ModelEditor {}
+pub struct ModelEditor {
+    drag_coord: Vec2<i32>,
+}
 
 #[allow(clippy::new_without_default)]
 impl ModelEditor {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            drag_coord: Vec2::zero(),
+        }
     }
 
-    pub fn draw(&mut self, ui: &mut TheUI, project: &Project) {
+    pub fn draw(&mut self, ui: &mut TheUI) {
         if let Some(render_view) = ui.get_render_view("ModelView") {
             let dim = *render_view.dim();
             let surface = render_view.render_buffer_mut();
@@ -27,15 +31,21 @@ impl ModelEditor {
                 let mut buffer = rb.lock().unwrap();
                 if buffer.width != dim.width as usize || buffer.height != dim.height as usize {
                     *buffer = RenderBuffer::new(dim.width as usize, dim.height as usize);
+                    buffer.accum = 1;
                 }
             }
 
             let grid = Arc::clone(&VOXELGRID);
+            let palette = Arc::clone(&PALETTE);
             let renderer = Arc::clone(&RENDERER);
             let camera = Arc::clone(&CAMERA);
 
             // Render
-            self.render(&mut rb, &grid, &renderer, &camera);
+            self.render(&mut rb, &grid, &palette, &renderer, &camera);
+            {
+                let mut buffer = rb.lock().unwrap();
+                buffer.accum += 1;
+            }
 
             // Blit
             {
@@ -49,8 +59,9 @@ impl ModelEditor {
         &self,
         buffer: &mut Arc<Mutex<RenderBuffer>>,
         grid: &Arc<RwLock<VoxelGrid>>,
+        palette: &Arc<RwLock<Palette>>,
         renderer: &Arc<Box<dyn Renderer>>,
-        camera: &Arc<Box<dyn Camera>>,
+        camera: &Arc<RwLock<Box<dyn Camera>>>,
     ) {
         let tile_size = (80, 80);
 
@@ -66,6 +77,7 @@ impl ModelEditor {
 
         // let ft_arc = Arc::clone(&ft);
         let grid_arc = Arc::clone(grid);
+        let palette_arc = Arc::clone(palette);
         let renderer_arc = Arc::clone(renderer);
         // let camera_arc = Arc::clone(camera);
 
@@ -74,6 +86,7 @@ impl ModelEditor {
         for _ in 0..num_cpus {
             // let ft = Arc::clone(&ft_arc);
             let grid = Arc::clone(&grid_arc);
+            let palette = Arc::clone(&palette_arc);
             let renderer = Arc::clone(&renderer_arc);
             let camera = Arc::clone(camera);
 
@@ -93,7 +106,10 @@ impl ModelEditor {
 
                         let grid_guard = grid.read().unwrap();
                         let grid_ref: &VoxelGrid = &grid_guard;
-                        let camera_ref = &camera;
+                        let palette_guard = palette.read().unwrap();
+                        let palette_ref: &Palette = &palette_guard;
+                        let camera_guard = camera.read().unwrap();
+                        let camera_ref = &camera_guard;
 
                         // Process tile
                         for h in 0..tile.height {
@@ -110,7 +126,13 @@ impl ModelEditor {
                                     1.0 - (y as F / screen_size.y),
                                 );
 
-                                let p = renderer.render(uv, screen_size, grid_ref, camera_ref);
+                                let p = renderer.render(
+                                    uv,
+                                    screen_size,
+                                    grid_ref,
+                                    palette_ref,
+                                    camera_ref,
+                                );
                                 tile_buffer.set(w, h, p.into_array());
                                 // tile_buffer.set(w, h, [uv.x, uv.y, 0.0, 1.0]);
                             }
@@ -119,7 +141,7 @@ impl ModelEditor {
                         buffer_mutex
                             .lock()
                             .unwrap()
-                            .copy_from(tile.x, tile.y, &tile_buffer);
+                            .accum_from(tile.x, tile.y, &tile_buffer);
                     } else {
                         // No remaining tiles, exit loop
                         break;
@@ -135,7 +157,7 @@ impl ModelEditor {
         }
 
         let _stop = self.get_time();
-        println!("Shader execution time: {:?} ms.", _stop - _start);
+        // println!("Shader execution time: {:?} ms.", _stop - _start);
     }
 
     pub fn handle_event(
@@ -149,8 +171,79 @@ impl ModelEditor {
         let mut redraw = false;
         match event {
             TheEvent::Copy => {}
+            TheEvent::RenderViewHoverChanged(id, coord) => {
+                if id.name == "ModelView" {
+                    if let Some(render_view) = ui.get_render_view("ModelView") {
+                        let dim = *render_view.dim();
+
+                        let uv = Vec2::new(
+                            coord.x as f32 / dim.width as f32,
+                            1.0 - (coord.y as f32 / dim.height as f32),
+                        );
+                        let camera = Arc::clone(&CAMERA);
+                        let mut camera = camera.write().unwrap();
+                        let ray = camera.create_ray(
+                            uv,
+                            Vec2::new(dim.width as f32, dim.height as f32),
+                            Vec2::zero(),
+                        );
+
+                        let grid = Arc::clone(&VOXELGRID);
+                        let mut grid = grid.write().unwrap();
+
+                        let hit = grid.dda(&ray);
+
+                        let hit_point: Option<Vec3<i32>> = match hit.hit {
+                            HitType::Outside => None,
+                            HitType::BBox((t_near, t_far)) => {
+                                let pos = ray.at(&t_far);
+                                if let Some(voxel_pos) = grid.world_to_index(pos) {
+                                    Some(Vec3::new(voxel_pos.0, voxel_pos.1, voxel_pos.2))
+                                } else {
+                                    None
+                                }
+                            }
+                            HitType::Voxel(_) => Some(hit.hit_point_local),
+                        };
+
+                        // if ui.alt {
+                        //     camera.zoom((*coord - self.drag_coord).y as f32);
+                        // } else
+                        if ui.logo || ui.ctrl {
+                            camera.rotate((*coord - self.drag_coord).map(|v| v as f32 * 5.0));
+                            self.drag_coord = *coord;
+                        } else {
+                            grid.clear_preview();
+                            if let Some(hit) = hit_point {
+                                let radius = 40;
+                                let r2 = (radius as i32).pow(2);
+                                for dz in -radius..=radius {
+                                    for dy in -radius..=radius {
+                                        for dx in -radius..=radius {
+                                            if dx * dx + dy * dy + dz * dz <= r2 {
+                                                let key = (hit.x + dx, hit.y + dy, hit.z + dz);
+                                                grid.preview_add(key.0, key.1, key.2, 2);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        reset_render();
+                    }
+                }
+            }
             TheEvent::RenderViewScrollBy(id, coord) => {
                 if id.name == "ModelView" {
+                    // if ui.alt {
+                    let camera = Arc::clone(&CAMERA);
+                    let mut camera = camera.write().unwrap();
+                    camera.zoom(coord.y as f32); //*coord - self.drag_coord).y as f32);
+                    self.drag_coord = *coord;
+                    reset_render();
+                    // }
+                    /*
                     if ui.ctrl || ui.logo {
                         let old_grid_size = project.map.grid_size;
 
@@ -162,7 +255,7 @@ impl ModelEditor {
                     } else {
                         project.map.offset += Vec2::new(-coord.x as f32, coord.y as f32);
                     }
-                    project.map.curr_rectangle = None;
+                    project.map.curr_rectangle = None;*/
                 }
                 redraw = true
             }

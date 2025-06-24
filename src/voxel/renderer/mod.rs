@@ -1,7 +1,7 @@
+pub mod editshader;
 pub mod pbr;
 
 use crate::prelude::*;
-use std::sync::Arc;
 use vek::{Vec2, Vec3, Vec4};
 
 #[allow(unused)]
@@ -18,8 +18,8 @@ pub trait Renderer: Send + Sync {
         &self,
         uv: Vec2<F>,
         resolution: Vec2<F>,
-        // project: Arc<Project>,
         grid: &VoxelGrid,
+        palette: &Palette,
         camera: &Box<dyn Camera>,
     ) -> Vec4<F> {
         Vec4::zero()

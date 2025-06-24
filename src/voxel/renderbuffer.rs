@@ -6,7 +6,7 @@ pub struct RenderBuffer {
     pub width: usize,
     pub height: usize,
     pub pixels: Vec<F>,
-    pub frames: usize,
+    pub accum: u32,
 
     pub file_path: Option<std::path::PathBuf>,
 }
@@ -17,7 +17,7 @@ impl RenderBuffer {
             width,
             height,
             pixels: vec![0.0; width * height * 4],
-            frames: 0,
+            accum: 1,
             file_path: None,
         }
     }
@@ -60,7 +60,7 @@ impl RenderBuffer {
     }
 
     /// Copy and accumulate pixels from another buffer to this buffer
-    pub fn accum_from(&mut self, x: usize, y: usize, other: &RenderBuffer, iteration: u32) {
+    pub fn accum_from(&mut self, x: usize, y: usize, other: &RenderBuffer) {
         for local_y in 0..other.height {
             for local_x in 0..other.width {
                 let global_x = x + local_x;
@@ -76,7 +76,7 @@ impl RenderBuffer {
                 for i in 0..4 {
                     let old = self.pixels[index + i];
                     let new = other.pixels[local_index + i];
-                    let factor = 1.0 / iteration as f32;
+                    let factor = 1.0 / self.accum as f32;
                     self.pixels[index + i] = old * (1.0 - factor) + new * factor;
                 }
             }

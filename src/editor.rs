@@ -2,17 +2,10 @@ use crate::prelude::*;
 // use crate::self_update::SelfUpdateEvent;
 // use crate::self_update::SelfUpdater;
 use crate::Embedded;
-use rusterix::{
-    PlayerCamera, Rusterix, SceneManager, SceneManagerResult, Texture, Value, ValueContainer,
-};
+
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::{
-    Arc, Mutex,
-    mpsc::{Receiver, Sender, channel},
-};
-
-use std::thread;
+use std::sync::{Arc, Mutex, mpsc::Receiver};
 
 pub static MODELEDITOR: LazyLock<RwLock<ModelEditor>> =
     LazyLock::new(|| RwLock::new(ModelEditor::new()));
@@ -20,13 +13,12 @@ pub static RENDERBUFFER: LazyLock<Arc<Mutex<RenderBuffer>>> =
     LazyLock::new(|| Arc::new(Mutex::new(RenderBuffer::new(100, 100))));
 pub static RENDERER: LazyLock<Arc<Box<dyn Renderer>>> =
     LazyLock::new(|| Arc::new(Box::new(PBR::new())));
-pub static CAMERA: LazyLock<Arc<Box<dyn Camera>>> =
-    LazyLock::new(|| Arc::new(Box::new(Pinhole::new())));
+pub static CAMERA: LazyLock<Arc<RwLock<Box<dyn Camera>>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(Box::new(Orbit::new()))));
 pub static VOXELGRID: LazyLock<Arc<RwLock<VoxelGrid>>> =
     LazyLock::new(|| Arc::new(RwLock::new(VoxelGrid::default())));
-
-pub static RUSTERIX: LazyLock<RwLock<Rusterix>> =
-    LazyLock::new(|| RwLock::new(Rusterix::default()));
+pub static PALETTE: LazyLock<Arc<RwLock<Palette>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(Palette::default())));
 
 /*
 pub static TILEPICKER: LazyLock<RwLock<TilePicker>> =
@@ -149,6 +141,20 @@ impl TheTrait for Editor {
     fn init(&mut self, _ctx: &mut TheContext) {
         let mut grid = VOXELGRID.write().unwrap();
         grid.add_sphere(Vec3::new(0.0, 0.0, 0.0), 0.5, 2);
+
+        for file in Embedded::iter() {
+            let name = file.as_ref();
+
+            if name == "aurora.txt" {
+                if let Some(bytes) = Embedded::get(name) {
+                    if let Ok(string) = std::str::from_utf8(bytes.data.as_ref()) {
+                        let mut palette = PALETTE.write().unwrap();
+                        let _ = palette.load_paintnet(string);
+                    }
+                }
+            }
+        }
+
         /*
         let updater = Arc::clone(&self.self_updater);
         let tx = self.self_update_tx.clone();
@@ -645,7 +651,7 @@ impl TheTrait for Editor {
         let (redraw_update, tick_update) = self.update_tracker.update((1000 / 30) as u64, 250_u64);
 
         if redraw_update {
-            MODELEDITOR.write().unwrap().draw(ui, &self.project);
+            MODELEDITOR.write().unwrap().draw(ui);
 
             redraw = true;
         }
