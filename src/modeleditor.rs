@@ -202,7 +202,7 @@ impl ModelEditor {
                         let hit_point: Option<Vec3<i32>> = match hit.hit {
                             HitType::Outside => None,
                             HitType::BBox((_t_near, t_far)) => {
-                                let eps = 0.5 * grid.voxel_size().x;
+                                let eps = 0.5 * grid.voxel_size.x;
                                 let p_in = ray.at(&(t_far - eps));
 
                                 grid.world_to_index(p_in)

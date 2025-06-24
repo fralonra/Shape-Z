@@ -81,12 +81,14 @@ pub struct VoxelGrid {
 
     bounds: [F; 3],
     size: [usize; 3],
+
     pub density: usize,
+    pub voxel_size: Vec3<F>,
 }
 
 impl Default for VoxelGrid {
     fn default() -> Self {
-        Self::new([6.0, 2.0, 4.0], 64)
+        Self::new([2.0, 2.0, 2.0], 128)
     }
 }
 
@@ -99,6 +101,12 @@ impl VoxelGrid {
             (bounds[2] * density as F).ceil() as usize,
         ];
 
+        let voxel_size = Vec3::new(
+            bounds[0] / size[0] as F,
+            bounds[1] / size[1] as F,
+            bounds[2] / size[2] as F,
+        );
+
         let mut g = Self {
             chunks: FxHashMap::default(),
             preview: Overlay::default(),
@@ -107,6 +115,7 @@ impl VoxelGrid {
             bounds,
             size,
             density,
+            voxel_size,
         };
 
         // 2-voxel floor ─ insert through the public API (writes into chunks)
@@ -121,25 +130,17 @@ impl VoxelGrid {
     }
 
     // ───────────────── helpers ────────────────────────────────────────────────
-    #[inline]
-    pub fn voxel_size(&self) -> Vec3<F> {
-        Vec3::new(
-            self.bounds[0] / self.size[0] as F,
-            self.bounds[1] / self.size[1] as F,
-            self.bounds[2] / self.size[2] as F,
-        )
-    }
 
     /// world **corner** of voxel `(ix,iy,iz)`
     #[inline]
     fn index_to_corner(&self, ix: i32, iy: i32, iz: i32) -> Vec3<F> {
-        (Vec3::new(ix as F, iy as F, iz as F) * self.voxel_size()) - Vec3::from(self.bounds) * 0.5
+        (Vec3::new(ix as F, iy as F, iz as F) * self.voxel_size) - Vec3::from(self.bounds) * 0.5
     }
 
     /// world **centre** of voxel `(ix,iy,iz)`
     #[inline]
     fn index_to_centre(&self, ix: i32, iy: i32, iz: i32) -> Vec3<F> {
-        self.index_to_corner(ix, iy, iz) + self.voxel_size() * 0.5
+        self.index_to_corner(ix, iy, iz) + self.voxel_size * 0.5
     }
 
     /// Convert a world-space position to the **voxel corner index**
@@ -147,7 +148,7 @@ impl VoxelGrid {
     #[inline]
     pub fn world_to_index(&self, p: Vec3<F>) -> Option<(i32, i32, i32)> {
         let shifted = p + Vec3::from(self.bounds) * 0.5;
-        let vs = self.voxel_size();
+        let vs = self.voxel_size;
         let v = (shifted / vs).map(|c| c.floor() as i32);
 
         if v.x >= 0
@@ -336,7 +337,7 @@ impl VoxelGrid {
         };
 
         // Pre-computation
-        let vs = self.voxel_size();
+        let vs = self.voxel_size;
         let step_i = ray.dir.map(|d| if d < 0.0 { -1 } else { 1 });
         let inv_dir = ray.dir.map(|d| 1.0 / d.abs().max(1e-30));
         let t_delta = vs * inv_dir; // Δt to cross one voxel
