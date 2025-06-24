@@ -1,83 +1,133 @@
 use crate::prelude::*;
+use std::mem;
 use theframework::prelude::FxHashMap;
 use vek::{Aabb, Vec3};
 
-type Coord = (i32, i32, i32);
+pub type Coord = (i32, i32, i32); // voxel key
+pub type ChunkCoord = (i32, i32, i32); // chunk key
 
-/// The voxel overlay used by tools.
-#[derive(Default)]
-struct Overlay {
-    pub added: FxHashMap<Coord, u8>, // Added voxels
-    pub removed: FxHashSet<Coord>,   // Removed voxels
+// --------------------------------------------------------------------------
+// Chunk: dense 32³ + small meta data
+// --------------------------------------------------------------------------
+const CHUNK_LG: usize = 5; // 2⁵ = 32
+const CHUNK_SIDE: usize = 1 << CHUNK_LG; // 32
+const CHUNK_MASK: i32 = (CHUNK_SIDE - 1) as i32;
+
+#[derive(Clone)]
+struct Chunk {
+    vox: FxHashMap<Coord, u8>,
 }
 
-impl Overlay {
-    fn empty() -> Self {
+impl Chunk {
+    fn new() -> Self {
         Self {
-            added: FxHashMap::default(),
-            removed: FxHashSet::default(),
+            vox: FxHashMap::default(),
         }
     }
 
-    pub fn clear(&mut self) {
+    #[inline]
+    fn get(&self, local: Coord) -> Option<u8> {
+        self.vox.get(&local).copied()
+    }
+
+    #[inline]
+    fn set(&mut self, local: Coord, mat: u8) -> Option<u8> {
+        if mat == 255 {
+            self.vox.remove(&local)
+        } else {
+            self.vox.insert(local, mat)
+        }
+    }
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.vox.is_empty()
+    }
+}
+
+// --------------------------------------------------------------------------
+// Overlay & undo/redo identical to the old version
+// --------------------------------------------------------------------------
+#[derive(Default)]
+struct Overlay {
+    added: FxHashMap<Coord, u8>,
+    removed: FxHashSet<Coord>,
+}
+impl Overlay {
+    fn clear(&mut self) {
         self.added.clear();
         self.removed.clear();
     }
 }
 
-/// One committed action – needed for undo / redo
 #[derive(Default)]
 struct Diff {
     changes: FxHashMap<Coord, Change>,
 }
-
-/// The change diff for a specific Coord.
 #[derive(Clone, Copy)]
 struct Change {
-    prev: Option<u8>, // state *before* the action
-    new: Option<u8>,  // state *after*  the action
+    prev: Option<u8>,
+    new: Option<u8>,
 }
 
-/// Sparse VoxelGrid
+// --------------------------------------------------------------------------
+// VoxelGrid – sparse chunk container
+// --------------------------------------------------------------------------
 pub struct VoxelGrid {
-    voxels: FxHashMap<Coord, u8>,
-    preview: Overlay,
-    undo_stack: Vec<Diff>, // past actions
-    redo_stack: Vec<Diff>, // actions we undid
-    bounds: [F; 3],        // world-space size
-    size: [usize; 3],      // voxel resolution   (nx,ny,nz)
-    pub density: usize,    // voxels per world-unit
+    chunks: FxHashMap<ChunkCoord, Chunk>, // *** only filled chunks ***
+    preview: Overlay,                     // identical to previous
+    undo_stack: Vec<Diff>,
+    redo_stack: Vec<Diff>,
+
+    bounds: [F; 3],
+    size: [usize; 3],
+    pub density: usize,
 }
 
 impl Default for VoxelGrid {
     fn default() -> Self {
-        Self::new([2.0, 2.0, 2.0], 128)
+        Self::new([6.0, 2.0, 4.0], 64)
     }
 }
 
 impl VoxelGrid {
+    // ───────────────── construction ───────────────────────────────────────────
     pub fn new(bounds: [F; 3], density: usize) -> Self {
-        let sz = [
+        let size = [
             (bounds[0] * density as F).ceil() as usize,
             (bounds[1] * density as F).ceil() as usize,
             (bounds[2] * density as F).ceil() as usize,
         ];
-        Self {
-            voxels: FxHashMap::default(),
-            preview: Overlay::empty(),
-            undo_stack: Default::default(),
-            redo_stack: Default::default(),
+
+        let mut g = Self {
+            chunks: FxHashMap::default(),
+            preview: Overlay::default(),
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
             bounds,
-            size: sz,
+            size,
             density,
+        };
+
+        // 2-voxel floor ─ insert through the public API (writes into chunks)
+        for z in 0..size[2] as i32 {
+            for y in 0..2 {
+                for x in 0..size[0] as i32 {
+                    g.set(x, y, z, 100);
+                }
+            }
         }
+        g
     }
 
-    /// Bounding box
+    // ───────────────── helpers ────────────────────────────────────────────────
     #[inline]
-    pub fn bbox(&self) -> Aabb<F> {
-        let h = Vec3::from(self.bounds) * 0.5;
-        Aabb { min: -h, max: h } // centred in **all** axes
+    pub fn voxel_size(&self) -> Vec3<F> {
+        Vec3::new(
+            self.bounds[0] / self.size[0] as F,
+            self.bounds[1] / self.size[1] as F,
+            self.bounds[2] / self.size[2] as F,
+        )
     }
 
     /// world **corner** of voxel `(ix,iy,iz)`
@@ -92,28 +142,14 @@ impl VoxelGrid {
         self.index_to_corner(ix, iy, iz) + self.voxel_size() * 0.5
     }
 
-    /// world → voxel index (**corner-based**, floor)
-    /// length of a voxel along each axis (world units)
-    #[inline]
-    fn voxel_size(&self) -> Vec3<F> {
-        Vec3::new(
-            self.bounds[0] / self.size[0] as F,
-            self.bounds[1] / self.size[1] as F,
-            self.bounds[2] / self.size[2] as F,
-        )
-    }
-
-    /// world position → voxel corner index  (returns None if outside)
+    /// Convert a world-space position to the **voxel corner index**
+    /// (`None` if the point lies outside the grid AABB).
     #[inline]
     pub fn world_to_index(&self, p: Vec3<F>) -> Option<(i32, i32, i32)> {
-        // shift the grid so its centre is at the origin → everything becomes ≥0
-        let shifted = p + Vec3::new(self.bounds[0], self.bounds[1], self.bounds[2]) * 0.5;
-
-        // divide by voxel size & floor to get integer coordinates
+        let shifted = p + Vec3::from(self.bounds) * 0.5;
         let vs = self.voxel_size();
         let v = (shifted / vs).map(|c| c.floor() as i32);
 
-        // manual bounds check (avoids unstable cmp… intrinsics)
         if v.x >= 0
             && v.x < self.size[0] as i32
             && v.y >= 0
@@ -128,64 +164,88 @@ impl VoxelGrid {
     }
 
     #[inline]
-    pub fn set(&mut self, x: i32, y: i32, z: i32, m: u8) {
-        self.voxels.insert((x, y, z), m);
+    fn bbox(&self) -> Aabb<F> {
+        let h = Vec3::from(self.bounds) * 0.5;
+        Aabb { min: -h, max: h }
     }
 
     #[inline]
+    fn split(coord: Coord) -> (ChunkCoord, Coord) {
+        let (x, y, z) = coord;
+        let cx = x >> CHUNK_LG;
+        let lx = x & CHUNK_MASK;
+        let cy = y >> CHUNK_LG;
+        let ly = y & CHUNK_MASK;
+        let cz = z >> CHUNK_LG;
+        let lz = z & CHUNK_MASK;
+        ((cx, cy, cz), (lx, ly, lz))
+    }
+
+    // ───────────────── public fast get/set ────────────────────────────────────
+    #[inline]
     pub fn get(&self, x: i32, y: i32, z: i32) -> Option<u8> {
         let key = (x, y, z);
-
-        // Preview added ?
         if let Some(&m) = self.preview.added.get(&key) {
             return Some(m);
         }
-        // Preview removed ?
         if self.preview.removed.contains(&key) {
             return None;
         }
-        // Committed
-        self.voxels.get(&key).copied()
+
+        let (ck, local) = Self::split(key);
+        self.chunks.get(&ck).and_then(|c| c.get(local))
     }
 
-    /// Stamp *new* voxels into the overlay
-    pub fn preview_add(&mut self, x: i32, y: i32, z: i32, mat: u8) {
-        self.preview.added.insert((x, y, z), mat);
-        self.preview.removed.remove(&(x, y, z)); // in case it was flagged “remove”
+    #[inline]
+    pub fn set(&mut self, x: i32, y: i32, z: i32, mat: u8) -> Option<u8> {
+        let (ck, local) = Self::split((x, y, z));
+        let chunk = self.chunks.entry(ck).or_insert_with(Chunk::new);
+        let prev = chunk.set(local, mat);
+
+        if chunk.is_empty() {
+            self.chunks.remove(&ck);
+        }
+        prev
     }
 
-    /// Mark an existing voxel to disappear in the preview
+    #[inline]
+    pub fn remove(&mut self, x: i32, y: i32, z: i32) -> Option<u8> {
+        self.set(x, y, z, 0)
+    }
+
+    // ───────────────── preview / commit / undo identical logic ───────────────
+    pub fn preview_add(&mut self, x: i32, y: i32, z: i32, m: u8) {
+        self.preview.added.insert((x, y, z), m);
+        self.preview.removed.remove(&(x, y, z));
+    }
     pub fn preview_remove(&mut self, x: i32, y: i32, z: i32) {
-        if self.voxels.contains_key(&(x, y, z)) {
+        if self.get(x, y, z).is_some() {
             self.preview.removed.insert((x, y, z));
-            self.preview.added.remove(&(x, y, z)); // prevents “add & remove” clash
+            self.preview.added.remove(&(x, y, z));
         }
     }
-
-    /// Clear the preview
     pub fn clear_preview(&mut self) {
         self.preview.clear();
     }
 
-    /// Apply the current preview to the base layer
     pub fn commit_preview(&mut self) {
         if self.preview.added.is_empty() && self.preview.removed.is_empty() {
             return;
         }
 
+        let Overlay { added, removed } = mem::take(&mut self.preview);
+
         let mut diff = Diff::default();
 
-        // Deletions
-        for key in &self.preview.removed {
-            let prev = self.voxels.remove(key);
-            diff.changes.insert(*key, Change { prev, new: None });
+        for (x, y, z) in removed {
+            let prev = self.remove(x, y, z);
+            diff.changes.insert((x, y, z), Change { prev, new: None });
         }
 
-        // Additions / replacements
-        for (&key, &mat) in &self.preview.added {
-            let prev = self.voxels.insert(key, mat); // insert/overwrite
+        for ((x, y, z), mat) in added {
+            let prev = self.set(x, y, z, mat);
             diff.changes.insert(
-                key,
+                (x, y, z),
                 Change {
                     prev,
                     new: Some(mat),
@@ -193,23 +253,39 @@ impl VoxelGrid {
             );
         }
 
-        // push to undo stack & clear redo (branch)
         self.undo_stack.push(diff);
         self.redo_stack.clear();
-        self.clear_preview();
     }
 
-    /// Undo
-    pub fn undo(&mut self) -> bool {
-        if let Some(diff) = self.undo_stack.pop() {
-            // roll back every change
-            for (k, ch) in &diff.changes {
-                match ch.prev {
+    fn pop_and_apply(&mut self, from: &mut Vec<Diff>, to: &mut Vec<Diff>) -> bool {
+        if let Some(diff) = from.pop() {
+            for (coord, change) in &diff.changes {
+                match change.new {
                     Some(mat) => {
-                        self.voxels.insert(*k, mat);
+                        self.set(coord.0, coord.1, coord.2, mat);
                     }
                     None => {
-                        self.voxels.remove(k);
+                        self.remove(coord.0, coord.1, coord.2);
+                    }
+                }
+            }
+            to.push(diff);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn undo(&mut self) -> bool {
+        let diff = self.undo_stack.pop();
+        if let Some(diff) = diff {
+            for (coord, change) in &diff.changes {
+                match change.prev {
+                    Some(mat) => {
+                        self.set(coord.0, coord.1, coord.2, mat);
+                    }
+                    None => {
+                        self.remove(coord.0, coord.1, coord.2);
                     }
                 }
             }
@@ -220,17 +296,16 @@ impl VoxelGrid {
         }
     }
 
-    /// Redo
     pub fn redo(&mut self) -> bool {
-        if let Some(diff) = self.redo_stack.pop() {
-            // re-apply every change
-            for (k, ch) in &diff.changes {
-                match ch.new {
+        let diff = self.redo_stack.pop();
+        if let Some(diff) = diff {
+            for (coord, change) in &diff.changes {
+                match change.new {
                     Some(mat) => {
-                        self.voxels.insert(*k, mat);
+                        self.set(coord.0, coord.1, coord.2, mat);
                     }
                     None => {
-                        self.voxels.remove(k);
+                        self.remove(coord.0, coord.1, coord.2);
                     }
                 }
             }
@@ -238,31 +313,6 @@ impl VoxelGrid {
             true
         } else {
             false
-        }
-    }
-
-    /// Fills a solid sphere (centre & radius in *world* units).
-    pub fn add_sphere(&mut self, centre: Vec3<F>, r: F, mat: u8) {
-        let r2 = r * r;
-        let min_ix = self
-            .world_to_index(centre - Vec3::broadcast(r))
-            .unwrap_or((0, 0, 0));
-        let max_ix = self
-            .world_to_index(centre + Vec3::broadcast(r) - 1e-6)
-            .unwrap_or((
-                self.size[0] as i32 - 1,
-                self.size[1] as i32 - 1,
-                self.size[2] as i32 - 1,
-            ));
-
-        for z in min_ix.2..=max_ix.2 {
-            for y in min_ix.1..=max_ix.1 {
-                for x in min_ix.0..=max_ix.0 {
-                    if (self.index_to_centre(x, y, z) - centre).magnitude_squared() <= r2 {
-                        self.set(x, y, z, mat);
-                    }
-                }
-            }
         }
     }
 

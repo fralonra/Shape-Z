@@ -84,7 +84,6 @@ impl Renderer for PBR {
             }
 
             if let HitType::Voxel(m) = hit.hit {
-                // let material = ft.graph.evaluate_material(hit.voxel.material as usize, hit);
                 let material = palette.get(m);
                 let albedo = material.base_color_linear();
 
@@ -94,6 +93,10 @@ impl Renderer for PBR {
                 let eps = 0.001;
 
                 let reflection_type = ReflectionType::GGX;
+
+                acc += mask
+                    * (material.base_color_linear() * Vec3::broadcast(1.0)
+                        + material.emission_color);
 
                 #[allow(clippy::single_match)]
                 match reflection_type {

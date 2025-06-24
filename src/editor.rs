@@ -139,8 +139,8 @@ impl TheTrait for Editor {
     }
 
     fn init(&mut self, _ctx: &mut TheContext) {
-        let mut grid = VOXELGRID.write().unwrap();
-        grid.add_sphere(Vec3::new(0.0, 0.0, 0.0), 0.5, 2);
+        // let mut grid = VOXELGRID.write().unwrap();
+        // grid.add_sphere(Vec3::new(0.0, 0.0, 0.0), 0.5, 2);
 
         for file in Embedded::iter() {
             let name = file.as_ref();

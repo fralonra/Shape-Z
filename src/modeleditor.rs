@@ -121,10 +121,7 @@ impl ModelEditor {
                                     continue;
                                 }
 
-                                let uv = Vec2::new(
-                                    x as F / screen_size.x,
-                                    1.0 - (y as F / screen_size.y),
-                                );
+                                let uv = Vec2::new(x as F / screen_size.x, y as F / screen_size.y);
 
                                 let p = renderer.render(
                                     uv,
@@ -171,6 +168,14 @@ impl ModelEditor {
         let mut redraw = false;
         match event {
             TheEvent::Copy => {}
+            TheEvent::RenderViewClicked(id, coord) => {
+                if id.name == "ModelView" {
+                    let grid = Arc::clone(&VOXELGRID);
+                    let mut grid = grid.write().unwrap();
+                    grid.commit_preview();
+                    grid.clear_preview();
+                }
+            }
             TheEvent::RenderViewHoverChanged(id, coord) => {
                 if id.name == "ModelView" {
                     if let Some(render_view) = ui.get_render_view("ModelView") {
@@ -178,7 +183,7 @@ impl ModelEditor {
 
                         let uv = Vec2::new(
                             coord.x as f32 / dim.width as f32,
-                            1.0 - (coord.y as f32 / dim.height as f32),
+                            coord.y as f32 / dim.height as f32,
                         );
                         let camera = Arc::clone(&CAMERA);
                         let mut camera = camera.write().unwrap();
@@ -191,17 +196,17 @@ impl ModelEditor {
                         let grid = Arc::clone(&VOXELGRID);
                         let mut grid = grid.write().unwrap();
 
+                        grid.clear_preview();
                         let hit = grid.dda(&ray);
 
                         let hit_point: Option<Vec3<i32>> = match hit.hit {
                             HitType::Outside => None,
-                            HitType::BBox((t_near, t_far)) => {
-                                let pos = ray.at(&t_far);
-                                if let Some(voxel_pos) = grid.world_to_index(pos) {
-                                    Some(Vec3::new(voxel_pos.0, voxel_pos.1, voxel_pos.2))
-                                } else {
-                                    None
-                                }
+                            HitType::BBox((_t_near, t_far)) => {
+                                let eps = 0.5 * grid.voxel_size().x;
+                                let p_in = ray.at(&(t_far - eps));
+
+                                grid.world_to_index(p_in)
+                                    .map(|(x, y, z)| Vec3::new(x, y, z))
                             }
                             HitType::Voxel(_) => Some(hit.hit_point_local),
                         };
@@ -210,10 +215,9 @@ impl ModelEditor {
                         //     camera.zoom((*coord - self.drag_coord).y as f32);
                         // } else
                         if ui.logo || ui.ctrl {
-                            camera.rotate((*coord - self.drag_coord).map(|v| v as f32 * 5.0));
+                            camera.rotate((*coord - self.drag_coord).map(|v| -v as f32 * 2.0));
                             self.drag_coord = *coord;
                         } else {
-                            grid.clear_preview();
                             if let Some(hit) = hit_point {
                                 let radius = 40;
                                 let r2 = (radius as i32).pow(2);
@@ -222,7 +226,7 @@ impl ModelEditor {
                                         for dx in -radius..=radius {
                                             if dx * dx + dy * dy + dz * dz <= r2 {
                                                 let key = (hit.x + dx, hit.y + dy, hit.z + dz);
-                                                grid.preview_add(key.0, key.1, key.2, 2);
+                                                grid.preview_add(key.0, key.1, key.2, 200);
                                             }
                                         }
                                     }
