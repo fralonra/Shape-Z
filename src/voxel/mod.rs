@@ -4,6 +4,7 @@ pub mod palette;
 pub mod ray;
 pub mod renderbuffer;
 pub mod renderer;
+pub mod tile;
 
 use crate::F;
 use vek::Vec3;
@@ -19,6 +20,9 @@ pub enum Face {
     NZ,
 }
 
+/// Coordinate for both Tiles and the Grid
+pub type Coord = (i32, i32, i32);
+
 /// HitType
 #[derive(Debug, Clone, PartialEq)]
 pub enum HitType {
@@ -30,11 +34,14 @@ pub enum HitType {
 /// HitRecord
 #[derive(Debug, Clone)]
 pub struct HitRecord {
-    pub hit_point_local: Vec3<i32>,
-    pub hit_point_world: Vec3<F>,
+    pub hitpoint: Vec3<F>,
     pub normal: Vec3<F>,
     pub face: Face,
     pub hit: HitType,
+
+    pub distance: F,
+    pub local_key: Coord,
+    pub tile_key: Coord,
 }
 
 impl Default for HitRecord {
@@ -46,11 +53,13 @@ impl Default for HitRecord {
 impl HitRecord {
     pub fn new() -> Self {
         Self {
-            hit_point_local: Vec3::zero(),
-            hit_point_world: Vec3::zero(),
+            hitpoint: Vec3::zero(),
             normal: Vec3::zero(),
             face: Face::NX,
             hit: HitType::Outside,
+            distance: 0.0,
+            local_key: (0, 0, 0),
+            tile_key: (0, 0, 0),
         }
     }
 }

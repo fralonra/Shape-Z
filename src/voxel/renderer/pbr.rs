@@ -87,7 +87,7 @@ impl Renderer for PBR {
                 let material = palette.get(m);
                 let albedo = material.base_color_linear();
 
-                let x = hit.hit_point_world;
+                let x = hit.hitpoint;
                 let n = hit.normal;
                 let nl = if n.dot(ray.dir) < 0.0 { n } else { -n };
                 let eps = 0.001;

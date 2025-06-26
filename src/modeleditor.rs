@@ -169,12 +169,12 @@ impl ModelEditor {
         match event {
             TheEvent::Copy => {}
             TheEvent::RenderViewClicked(id, coord) => {
-                if id.name == "ModelView" {
-                    let grid = Arc::clone(&VOXELGRID);
-                    let mut grid = grid.write().unwrap();
-                    grid.commit_preview();
-                    grid.clear_preview();
-                }
+                // if id.name == "ModelView" {
+                //     let grid = Arc::clone(&VOXELGRID);
+                //     let mut grid = grid.write().unwrap();
+                //     grid.commit_preview();
+                //     grid.clear_preview();
+                // }
             }
             TheEvent::RenderViewHoverChanged(id, coord) => {
                 if id.name == "ModelView" {
@@ -193,9 +193,17 @@ impl ModelEditor {
                             Vec2::zero(),
                         );
 
-                        let grid = Arc::clone(&VOXELGRID);
-                        let mut grid = grid.write().unwrap();
+                        // let grid = Arc::clone(&VOXELGRID);
+                        // let mut grid = grid.write().unwrap();
 
+                        if ui.alt {
+                            camera.zoom((*coord - self.drag_coord).y as f32);
+                        } else if ui.logo || ui.ctrl {
+                            camera.rotate((*coord - self.drag_coord).map(|v| -v as f32 * 2.0));
+                            self.drag_coord = *coord;
+                        }
+
+                        /*
                         grid.clear_preview();
                         let hit = grid.dda(&ray);
 
@@ -211,13 +219,7 @@ impl ModelEditor {
                             HitType::Voxel(_) => Some(hit.hit_point_local),
                         };
 
-                        // if ui.alt {
-                        //     camera.zoom((*coord - self.drag_coord).y as f32);
-                        // } else
-                        if ui.logo || ui.ctrl {
-                            camera.rotate((*coord - self.drag_coord).map(|v| -v as f32 * 2.0));
-                            self.drag_coord = *coord;
-                        } else {
+                        else {
                             if let Some(hit) = hit_point {
                                 let radius = 40;
                                 let r2 = (radius as i32).pow(2);
@@ -232,7 +234,7 @@ impl ModelEditor {
                                     }
                                 }
                             }
-                        }
+                        }*/
 
                         reset_render();
                     }

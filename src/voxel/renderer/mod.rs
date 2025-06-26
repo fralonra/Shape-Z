@@ -1,4 +1,4 @@
-pub mod editshader;
+// pub mod editshader;
 pub mod pbr;
 
 use crate::prelude::*;

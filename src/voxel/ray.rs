@@ -28,14 +28,14 @@ impl Ray {
     }
 
     /// Returns the position by `dist` units along its direction.
-    pub fn at(&self, dist: &F) -> Vec3<F> {
-        self.origin + *dist * self.dir
+    pub fn at(&self, dist: F) -> Vec3<F> {
+        self.origin + dist * self.dir
     }
 
     /// Returns a new Ray advanced by `dist` units along its direction.
     #[inline(always)]
     pub fn advanced(&self, dist: F) -> Self {
-        Self::new(self.at(&dist), self.dir)
+        Self::new(self.at(dist), self.dir)
     }
 
     /// Intersects this ray with an AABB. Returns Some(tmin, tmax) if it hits, None otherwise.
