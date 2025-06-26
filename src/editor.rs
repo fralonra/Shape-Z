@@ -140,6 +140,11 @@ impl TheTrait for Editor {
 
     fn init(&mut self, _ctx: &mut TheContext) {
         // let mut grid = VOXELGRID.write().unwrap();
+
+        // for t in grid.tiles.values_mut() {
+        //     t.add_floor();
+        // }
+
         // grid.add_sphere(Vec3::new(0.0, 0.0, 0.0), 0.5, 2);
 
         for file in Embedded::iter() {

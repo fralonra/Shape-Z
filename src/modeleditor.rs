@@ -169,12 +169,11 @@ impl ModelEditor {
         match event {
             TheEvent::Copy => {}
             TheEvent::RenderViewClicked(id, coord) => {
-                // if id.name == "ModelView" {
-                //     let grid = Arc::clone(&VOXELGRID);
-                //     let mut grid = grid.write().unwrap();
-                //     grid.commit_preview();
-                //     grid.clear_preview();
-                // }
+                if id.name == "ModelView" {
+                    let grid = Arc::clone(&VOXELGRID);
+                    let mut grid = grid.write().unwrap();
+                    grid.merge_preview();
+                }
             }
             TheEvent::RenderViewHoverChanged(id, coord) => {
                 if id.name == "ModelView" {
@@ -193,14 +192,54 @@ impl ModelEditor {
                             Vec2::zero(),
                         );
 
-                        // let grid = Arc::clone(&VOXELGRID);
-                        // let mut grid = grid.write().unwrap();
+                        // --
 
                         if ui.alt {
                             camera.zoom((*coord - self.drag_coord).y as f32);
                         } else if ui.logo || ui.ctrl {
                             camera.rotate((*coord - self.drag_coord).map(|v| -v as f32 * 2.0));
                             self.drag_coord = *coord;
+                        } else {
+                            let grid = Arc::clone(&VOXELGRID);
+                            let mut grid = grid.write().unwrap();
+
+                            grid.preview = None;
+                            let hit = grid.dda(&ray);
+
+                            let hit_point: Option<Vec3<f32>> = match hit.hit {
+                                HitType::Outside => None,
+                                HitType::BBox((_t_near, t_far)) => Some(ray.at(t_far)),
+                                HitType::Voxel(_) => Some(hit.hitpoint),
+                            };
+
+                            if let Some(hit_point) = hit_point {
+                                let mut preview = VoxelGrid::new([1.0, 1.0, 1.0], grid.density);
+                                let step = 1.0 / grid.density_f;
+
+                                let r_vox = 20;
+                                let r_sq = (r_vox as F + 0.5).powi(2);
+
+                                for dx in -r_vox..=r_vox {
+                                    for dy in -r_vox..=r_vox {
+                                        for dz in -r_vox..=r_vox {
+                                            let dist_sq = (dx * dx + dy * dy + dz * dz) as F;
+                                            if dist_sq > r_sq {
+                                                continue; // outside sphere
+                                            }
+
+                                            let offset =
+                                                Vec3::new(dx as F, dy as F, dz as F) * step;
+                                            let pos = hit_point + offset;
+
+                                            preview.set_create(pos, 100);
+                                        }
+                                    }
+                                }
+                                preview.update_bboxes();
+                                grid.preview = Some(Box::new(preview));
+                            }
+
+                            // println!("{:?}", hit_point);
                         }
 
                         /*

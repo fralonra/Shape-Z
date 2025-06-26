@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use rayon::prelude::*;
 use theframework::prelude::FxHashMap;
 
 #[derive(Clone)]
@@ -7,11 +8,13 @@ pub struct VoxelGrid {
     pub density: usize,
     pub density_f: F,
     pub bounds: [F; 3],
+
+    pub preview: Option<Box<VoxelGrid>>,
 }
 
 impl Default for VoxelGrid {
     fn default() -> Self {
-        Self::new([2.0, 2.0, 2.0], 128)
+        Self::new([2.0, 2.0, 2.0], 96)
     }
 }
 
@@ -42,7 +45,15 @@ impl VoxelGrid {
             density,
             density_f: density as F,
             bounds,
+            preview: None,
         }
+    }
+
+    /// Update the bounding boxes of the tiles (needed after editing)
+    pub fn update_bboxes(&mut self) {
+        self.tiles.par_iter_mut().for_each(|(_, tile)| {
+            tile.update_bbox();
+        });
     }
 
     /// Get a voxel at the given world coordinate
@@ -106,10 +117,41 @@ impl VoxelGrid {
         Aabb { min: -h, max: h }
     }
 
+    /// Merge the preview grid into the main grid, then clear the preview.
+    pub fn merge_preview(&mut self) {
+        let preview = match self.preview.take() {
+            Some(p) => p,
+            None => return,
+        };
+
+        for (tile_key, src_tile) in preview.tiles {
+            let dst_tile = self
+                .tiles
+                .entry(tile_key)
+                .or_insert_with(|| Tile::new(self.density));
+
+            let d = src_tile.density as i32; // side length per axis
+            let area = d * d; // d², pre-compute
+
+            // Iterate over every voxel in the dense array.
+            for (idx, &maybe_mat) in src_tile.voxels.iter().enumerate() {
+                if let Some(mat) = maybe_mat {
+                    // Reconstruct (x,y,z) from flat index.
+                    let idx = idx as i32;
+                    let z = idx / area;
+                    let y = (idx - z * area) / d;
+                    let x = idx - z * area - y * d;
+
+                    dst_tile.set((x, y, z), mat); // overwrite policy
+                }
+            }
+
+            dst_tile.update_bbox();
+        }
+    }
+
     /// Recursively dda the tiles
     pub fn dda(&self, ray: &Ray) -> HitRecord {
-        // Port of https://www.shadertoy.com/view/ct33Rn
-
         #[inline(always)]
         fn equal(l: f32, r: Vec3<f32>) -> Vec3<f32> {
             r.map(|v| if l == v { 1.0 } else { 0.0 })
@@ -120,12 +162,9 @@ impl VoxelGrid {
             None => return HitRecord::default(),
         };
 
-        // let t_min = 0.0_f32;
-        // let t_max = 10.0_f32;
-
         let mut t = t_min.max(0.0);
 
-        let ro = ray.origin; //at(t);
+        let ro = ray.at(t);
         let rd = ray.dir;
 
         let mut i = ro.map(|v| v.floor());
@@ -134,6 +173,26 @@ impl VoxelGrid {
 
         while t < t_max {
             let key = i.map(|v| v as i32);
+
+            // Test the preview first (if any)
+            if let Some(preview) = &self.preview {
+                if let Some(tile) = preview.tiles.get(&(key.x, key.y, key.z)) {
+                    let mut lro = ray.at(t);
+                    lro -= i;
+                    lro *= tile.density as f32;
+                    lro -= rd * 0.01;
+
+                    if !tile.is_empty() {
+                        if let Some(mut hit) = tile.dda(&Ray::new(lro, rd)) {
+                            // hit.tile_key = preview_key;
+                            hit.hitpoint = ray.at(t + hit.distance / self.density_f);
+                            hit.distance = t;
+                            // hit.is_preview = true; // Optional flag
+                            return hit;
+                        }
+                    }
+                }
+            }
 
             if let Some(tile) = self.tiles.get(&(key.x, key.y, key.z)) {
                 let mut lro = ray.at(t);
