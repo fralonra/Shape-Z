@@ -162,7 +162,6 @@ impl ModelEditor {
         event: &TheEvent,
         ui: &mut TheUI,
         _ui_ctx: &mut TheContext,
-        project: &mut Project,
         _ctx: &mut Context,
     ) -> bool {
         let mut redraw = false;

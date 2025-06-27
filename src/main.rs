@@ -4,10 +4,13 @@ use theframework::*;
 
 pub mod context;
 pub mod editor;
-// pub mod mapeditor;
 pub mod misc;
 pub mod modeleditor;
+pub mod node;
+pub mod nodeeditor;
 pub mod project;
+pub mod toollist;
+pub mod tools;
 pub mod utils;
 pub mod voxel;
 
@@ -39,7 +42,9 @@ pub mod prelude {
     pub use crate::context::*;
     pub use crate::misc::UpdateTracker;
     pub use crate::modeleditor::*;
+    pub use crate::nodeeditor::*;
     pub use crate::project::*;
+    pub use crate::toollist::*;
     pub use crate::{Color, F};
 
     pub use crate::voxel::camera::Camera;
@@ -54,6 +59,11 @@ pub mod prelude {
     pub use crate::voxel::renderer::pbr::PBR;
     pub use crate::voxel::tile::Tile;
     pub use crate::voxel::{Coord, Face, HitRecord, HitType};
+
+    pub use crate::node::graph::*;
+    pub use crate::node::nodefx::*;
+
+    pub use crate::tools::{Tool, ToolEvent};
 
     /*
     pub use crate::codeeditor::*;

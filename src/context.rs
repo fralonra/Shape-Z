@@ -1,21 +1,28 @@
 pub use rusterix::map::*;
 use theframework::prelude::*;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Project {
-    pub map: Map,
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum ToolMode {
+    Palette,
+    Point,
+    History,
 }
 
-impl Default for Project {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Context {
+    pub mode: ToolMode,
+}
+
+impl Default for Context {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Project {
+impl Context {
     pub fn new() -> Self {
         Self {
-            map: Map::default(),
+            mode: ToolMode::Palette,
         }
     }
 }

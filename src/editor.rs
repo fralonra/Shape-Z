@@ -7,8 +7,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex, mpsc::Receiver};
 
-pub static MODELEDITOR: LazyLock<RwLock<ModelEditor>> =
-    LazyLock::new(|| RwLock::new(ModelEditor::new()));
 pub static RENDERBUFFER: LazyLock<Arc<Mutex<RenderBuffer>>> =
     LazyLock::new(|| Arc::new(Mutex::new(RenderBuffer::new(100, 100))));
 pub static RENDERER: LazyLock<Arc<Box<dyn Renderer>>> =
@@ -19,6 +17,13 @@ pub static VOXELGRID: LazyLock<Arc<RwLock<VoxelGrid>>> =
     LazyLock::new(|| Arc::new(RwLock::new(VoxelGrid::default())));
 pub static PALETTE: LazyLock<Arc<RwLock<Palette>>> =
     LazyLock::new(|| Arc::new(RwLock::new(Palette::default())));
+
+pub static MODELEDITOR: LazyLock<RwLock<ModelEditor>> =
+    LazyLock::new(|| RwLock::new(ModelEditor::new()));
+pub static NODEEDITOR: LazyLock<RwLock<NodeEditor>> =
+    LazyLock::new(|| RwLock::new(NodeEditor::new()));
+pub static TOOLLIST: LazyLock<RwLock<ToolList>> =
+    LazyLock::new(|| RwLock::new(ToolList::default()));
 
 /*
 pub static TILEPICKER: LazyLock<RwLock<TilePicker>> =
@@ -175,7 +180,7 @@ impl TheTrait for Editor {
     }
 
     fn window_title(&self) -> String {
-        "Forged Thoughts".to_string()
+        "Shape-Z: Shape That World".to_string()
     }
 
     fn default_window_size(&self) -> (usize, usize) {
@@ -203,7 +208,8 @@ impl TheTrait for Editor {
     }*/
 
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-        // RUSTERIX.write().unwrap().client.messages_font = ctx.ui.font.clone();
+        ctx.ui
+            .send(TheEvent::Custom(TheId::named("Startup"), TheValue::Empty));
 
         // Embedded Icons
         for file in Embedded::iter() {
@@ -324,7 +330,7 @@ impl TheTrait for Editor {
         menubar.limiter_mut().set_max_height(43 + 22);
 
         let mut logo_button = TheMenubarButton::new(TheId::named("Logo"));
-        logo_button.set_icon_name("logo".to_string());
+        logo_button.set_icon_name("logo_toolbar".to_string());
         logo_button.set_status_text("Open the Eldiron Website ...");
 
         let mut open_button = TheMenubarButton::new(TheId::named("Open"));
@@ -407,22 +413,41 @@ impl TheTrait for Editor {
         top_canvas.set_top(menu_canvas);
         ui.canvas.set_top(top_canvas);
 
-        let mut map_editor_canvas = TheCanvas::new();
-        let map_editor_view = TheRenderView::new(TheId::named("ModelView"));
-        map_editor_canvas.set_widget(map_editor_view);
+        let mut model_canvas = TheCanvas::new();
+        let model_view = TheRenderView::new(TheId::named("ModelView"));
+        model_canvas.set_widget(model_view);
 
-        let mut render_canvas = TheCanvas::new();
-        let render_view = TheRenderView::new(TheId::named("RenderView"));
-        render_canvas.set_widget(render_view);
+        let mut stack_canvas = TheCanvas::new();
+        let mut stack_layout = TheStackLayout::new(TheId::named("StackLayout"));
+
+        let mut palette_canvas = TheCanvas::default();
+        let palette_picker = ThePalettePicker::new(TheId::named("PalettePicker"));
+        palette_canvas.set_widget(palette_picker);
+
+        stack_layout.add_canvas(palette_canvas);
+
+        stack_canvas.set_layout(stack_layout);
 
         let mut hsplitlayout = TheSharedHLayout::new(TheId::named("Shared HLayout"));
-        hsplitlayout.add_canvas(render_canvas);
-        hsplitlayout.add_canvas(map_editor_canvas);
-        hsplitlayout.set_shared_ratio(0.2);
+        hsplitlayout.add_canvas(stack_canvas);
+        hsplitlayout.add_canvas(model_canvas);
+        hsplitlayout.set_shared_ratio(0.25);
         hsplitlayout.set_mode(TheSharedHLayoutMode::Shared);
 
         let mut top_canvas = TheCanvas::new();
         top_canvas.set_layout(hsplitlayout);
+
+        // Tool Params
+        let mut toolbar_hlayout = TheHLayout::new(TheId::named("Tool Params"));
+        toolbar_hlayout.set_background_color(None);
+        toolbar_hlayout.set_margin(Vec4::new(10, 2, 5, 2));
+
+        let mut toolbar_canvas = TheCanvas::default();
+        toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
+        toolbar_canvas.set_layout(toolbar_hlayout);
+
+        top_canvas.bottom_is_expanding = true;
+        top_canvas.set_bottom(toolbar_canvas);
 
         let mut bottom_canvas = TheCanvas::new();
         let node_view = TheNodeCanvasView::new(TheId::named("NodeView"));
@@ -437,11 +462,14 @@ impl TheTrait for Editor {
         let mut shared_canvas = TheCanvas::new();
         shared_canvas.set_layout(vsplitlayout);
 
-        // Tool List
+        // Mode List
         let mut tool_list_canvas: TheCanvas = TheCanvas::new();
 
         let mut tool_list_bar_canvas = TheCanvas::new();
-        tool_list_bar_canvas.set_widget(TheToolListBar::new(TheId::empty()));
+        let mut tool_list_bar = TheToolListBar::new(TheId::empty());
+        tool_list_bar.set_value(TheValue::Text("MODE".into()));
+
+        tool_list_bar_canvas.set_widget(tool_list_bar);
         tool_list_canvas.set_top(tool_list_bar_canvas);
 
         let mut v_tool_list_layout = TheVLayout::new(TheId::named("Tool List Layout"));
@@ -449,10 +477,30 @@ impl TheTrait for Editor {
         v_tool_list_layout.set_margin(Vec4::new(2, 2, 2, 2));
         v_tool_list_layout.set_padding(1);
 
-        // TOOLLIST
-        //     .write()
-        //     .unwrap()
-        //     .set_active_editor(&mut v_tool_list_layout, ctx);
+        let mut b = TheToolListButton::new(TheId::named("Palette Mode"));
+        b.set_icon_name("move".into());
+        b.set_status_text("Palette Mode.");
+        b.set_state(TheWidgetState::Selected);
+        v_tool_list_layout.add_widget(Box::new(b));
+
+        let mut b = TheToolListButton::new(TheId::named("Point Mode"));
+        b.set_icon_name("move".into());
+        b.set_status_text("Point mode.");
+        v_tool_list_layout.add_widget(Box::new(b));
+
+        let mut b = TheToolListButton::new(TheId::named("History Mode"));
+        b.set_icon_name("move".into());
+        b.set_status_text("History mode.");
+        v_tool_list_layout.add_widget(Box::new(b));
+
+        let mut tool_list_bar = TheToolListBar::new(TheId::empty());
+        tool_list_bar.set_value(TheValue::Text("TOOL".into()));
+        v_tool_list_layout.add_widget(Box::new(tool_list_bar));
+
+        TOOLLIST
+            .write()
+            .unwrap()
+            .add_tools(&mut v_tool_list_layout, ctx);
 
         tool_list_canvas.set_layout(v_tool_list_layout);
 
@@ -464,145 +512,20 @@ impl TheTrait for Editor {
         tool_list_border_canvas.set_widget(border_widget);
 
         tool_list_canvas.set_right(tool_list_border_canvas);
+
         shared_canvas.set_left(tool_list_canvas);
 
         //
 
         ui.canvas.set_center(shared_canvas);
 
-        /*
-        // Sidebar
-        self.sidebar.init_ui(ui, ctx, &mut self.project);
-
-        // Panels
-        let bottom_panels =
-            PANELS
-                .write()
-                .unwrap()
-                .init_ui(ui, ctx, &mut self.project, &mut self.server_ctx);
-
-        // Editor
-        //let mut tab_canvas: TheCanvas = TheCanvas::new();
-        //let mut tab_layout = TheTabLayout::new(TheId::named("Editor Tab"));
-
-        let poly_canvas = self.mapeditor.init_ui(ui, ctx, &mut self.project);
-
-        //tab_layout.add_canvas(str!("Game View"), game_canvas);
-
-        // let model_canvas: TheCanvas =
-        //     MODELEDITOR
-        //         .lock()
-        //         .unwrap()
-        //         .init_ui(ui, ctx, &mut self.project);
-        // tab_layout.add_canvas(str!("Model View"), model_canvas);
-
-        /*
-        let material_canvas = self.materialeditor.init_ui(ui, ctx, &mut self.project);
-        tab_layout.add_canvas(str!("Material View"), material_canvas);
-
-        let screen_canvas = self.screeneditor.init_ui(ui, ctx, &mut self.project);
-        tab_layout.add_canvas(str!("Screen View"), screen_canvas);
-
-        tab_canvas.set_layout(tab_layout);
-        */
-        let mut vsplitlayout = TheSharedVLayout::new(TheId::named("Shared VLayout"));
-        vsplitlayout.add_canvas(poly_canvas);
-        vsplitlayout.add_canvas(bottom_panels);
-        vsplitlayout.set_shared_ratio(crate::DEFAULT_VLAYOUT_RATIO);
-        vsplitlayout.set_mode(TheSharedVLayoutMode::Shared);
-
-        let mut shared_canvas = TheCanvas::new();
-        shared_canvas.set_layout(vsplitlayout);
-
-        // Tool List
-        let mut tool_list_canvas: TheCanvas = TheCanvas::new();
-
-        let mut tool_list_bar_canvas = TheCanvas::new();
-        tool_list_bar_canvas.set_widget(TheToolListBar::new(TheId::empty()));
-        tool_list_canvas.set_top(tool_list_bar_canvas);
-
-        let mut v_tool_list_layout = TheVLayout::new(TheId::named("Tool List Layout"));
-        v_tool_list_layout.limiter_mut().set_max_width(51);
-        v_tool_list_layout.set_margin(Vec4::new(2, 2, 2, 2));
-        v_tool_list_layout.set_padding(1);
-
-        TOOLLIST
-            .write()
-            .unwrap()
-            .set_active_editor(&mut v_tool_list_layout, ctx);
-
-        tool_list_canvas.set_layout(v_tool_list_layout);
-
-        let mut tool_list_border_canvas = TheCanvas::new();
-        let mut border_widget = TheIconView::new(TheId::empty());
-        border_widget.set_border_color(Some([82, 82, 82, 255]));
-        border_widget.limiter_mut().set_max_width(1);
-        border_widget.limiter_mut().set_max_height(i32::MAX);
-        tool_list_border_canvas.set_widget(border_widget);
-
-        tool_list_canvas.set_right(tool_list_border_canvas);
-        shared_canvas.set_left(tool_list_canvas);
-
-        ui.canvas.set_center(shared_canvas);
-
         let mut status_canvas = TheCanvas::new();
         let mut statusbar = TheStatusbar::new(TheId::named("Statusbar"));
-        statusbar.set_text(
-            "Welcome to Eldiron! Visit Eldiron.com for information and example projects."
-                .to_string(),
-        );
+        statusbar.set_text("Welcome to Shape-Z".to_string());
         status_canvas.set_widget(statusbar);
 
         ui.canvas.set_bottom(status_canvas);
 
-        // -
-
-        // ctx.ui.set_disabled("Save");
-        // ctx.ui.set_disabled("Save As");
-        ctx.ui.set_disabled("Undo");
-        ctx.ui.set_disabled("Redo");
-
-        // Init Rusterix
-
-        if let Some(icon) = ctx.ui.icon("light_on") {
-            let texture = Texture::from_rgbabuffer(icon);
-            self.build_values.set("light_on", Value::Texture(texture));
-        }
-        if let Some(icon) = ctx.ui.icon("light_off") {
-            let texture = Texture::from_rgbabuffer(icon);
-            self.build_values.set("light_off", Value::Texture(texture));
-        }
-        if let Some(icon) = ctx.ui.icon("character_on") {
-            let texture = Texture::from_rgbabuffer(icon);
-            self.build_values
-                .set("character_on", Value::Texture(texture));
-        }
-        if let Some(icon) = ctx.ui.icon("character_off") {
-            let texture = Texture::from_rgbabuffer(icon);
-            self.build_values
-                .set("character_off", Value::Texture(texture));
-        }
-        if let Some(icon) = ctx.ui.icon("treasure_on") {
-            let texture = Texture::from_rgbabuffer(icon);
-            self.build_values
-                .set("treasure_on", Value::Texture(texture));
-        }
-        if let Some(icon) = ctx.ui.icon("treasure_off") {
-            let texture = Texture::from_rgbabuffer(icon);
-            self.build_values
-                .set("treasure_off", Value::Texture(texture));
-        }
-
-        RUSTERIX
-            .write()
-            .unwrap()
-            .client
-            .builder_d2
-            .set_properties(&self.build_values);
-        RUSTERIX.write().unwrap().set_d2();
-        SCENEMANAGER.write().unwrap().startup();
-
-        */
         self.event_receiver = Some(ui.add_state_listener("Main Receiver".into()));
     }
 
@@ -626,27 +549,51 @@ impl TheTrait for Editor {
 
         if let Some(receiver) = &mut self.event_receiver {
             while let Ok(event) = receiver.try_recv() {
-                /*
-                if TOOLLIST.write().unwrap().handle_event(
-                    &event,
-                    ui,
-                    ctx,
-                    &mut self.project,
-                    &mut self.server_ctx,
-                ) {
-                    redraw = true;
-                }*/
-                if MODELEDITOR.write().unwrap().handle_event(
-                    &event,
-                    ui,
-                    ctx,
-                    &mut self.project,
-                    &mut self.context,
-                ) {
+                if TOOLLIST
+                    .write()
+                    .unwrap()
+                    .handle_event(&event, ui, ctx, &mut self.context)
+                {
                     redraw = true;
                 }
+                if MODELEDITOR
+                    .write()
+                    .unwrap()
+                    .handle_event(&event, ui, ctx, &mut self.context)
+                {
+                    redraw = true;
+                }
+                #[allow(clippy::single_match)]
                 match &event {
-                    TheEvent::Copy => {}
+                    TheEvent::Custom(id, _) => {
+                        if id.name == "Startup" {
+                            crate::utils::update_palette_ui(ui, ctx);
+                            let mut toollist = TOOLLIST.write().unwrap();
+                            let id = toollist.tools[0].id().uuid;
+                            toollist.set_tool(id, ui, ctx, &mut self.context);
+                        }
+                    }
+                    TheEvent::StateChanged(id, _) => {
+                        if id.name == "Palette Mode" {
+                            self.context.mode = ToolMode::Palette;
+                            ctx.ui
+                                .set_widget_state("Point Mode".into(), TheWidgetState::None);
+                            ctx.ui
+                                .set_widget_state("History Mode".into(), TheWidgetState::None);
+                        } else if id.name == "Point Mode" {
+                            self.context.mode = ToolMode::Point;
+                            ctx.ui
+                                .set_widget_state("Palette Mode".into(), TheWidgetState::None);
+                            ctx.ui
+                                .set_widget_state("History Mode".into(), TheWidgetState::None);
+                        } else if id.name == "History Mode" {
+                            self.context.mode = ToolMode::History;
+                            ctx.ui
+                                .set_widget_state("Palette Mode".into(), TheWidgetState::None);
+                            ctx.ui
+                                .set_widget_state("Point Mode".into(), TheWidgetState::None);
+                        }
+                    }
                     _ => {}
                 }
             }

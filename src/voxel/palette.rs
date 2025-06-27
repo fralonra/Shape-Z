@@ -1,19 +1,16 @@
 //! material.rs  – one struct that covers **Disney + OpenPBR**
 #![allow(clippy::upper_case_acronyms)]
 
-use crate::F;
+use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use theframework::prelude::*;
 use vek::Vec3;
-
-/// Tiny alias so we can write `Color3` instead of `Vec3<f32>`
-pub type Color3 = Vec3<f32>;
 
 /// A material definition
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Material {
     /* ─────── Disney “principled” core ─────── */
-    pub base_color: Color3,
+    pub base_color: Vec3<f32>,
     pub subsurface: f32,
     pub metallic: f32,
     pub specular: f32,
@@ -28,14 +25,14 @@ pub struct Material {
     pub ior: f32,
     pub transmission: f32,
     pub transmission_roughness: f32,
-    pub emission_color: Color3,
+    pub emission_color: Vec3<f32>,
     pub emission_strength: f32,
 
     /* ─────── Optional OpenPBR extensions ─────── */
     #[serde(default)]
     pub coat_weight: f32,
     #[serde(default)]
-    pub coat_color: Color3,
+    pub coat_color: Vec3<f32>,
     #[serde(default)]
     pub coat_roughness: f32,
     #[serde(default)]
@@ -49,16 +46,16 @@ pub struct Material {
     pub thin_film_ior: Option<f32>,
 
     #[serde(default)]
-    pub specular_edge_color: Option<Color3>,
+    pub specular_edge_color: Option<Vec3<f32>>,
     #[serde(default)]
     pub specular_weight: f32,
 
     #[serde(default)]
     pub transmission_depth: Option<f32>,
     #[serde(default)]
-    pub volume_scatter_color: Option<Color3>,
+    pub volume_scatter_color: Option<Vec3<f32>>,
     #[serde(default)]
-    pub volume_absorption_color: Option<Color3>,
+    pub volume_absorption_color: Option<Vec3<f32>>,
     #[serde(default)]
     pub volume_anisotropy: Option<f32>,
 }
@@ -67,7 +64,7 @@ impl Default for Material {
     fn default() -> Self {
         Self {
             /* Disney defaults – match Blender’s “Principled BSDF” */
-            base_color: Color3::one(),
+            base_color: Vec3::one(),
             subsurface: 0.0,
             metallic: 0.0,
             specular: 0.5,
@@ -82,12 +79,12 @@ impl Default for Material {
             ior: 1.45,
             transmission: 0.0,
             transmission_roughness: 0.0,
-            emission_color: Color3::zero(),
+            emission_color: Vec3::zero(),
             emission_strength: 0.0,
 
             /* OpenPBR extras – all zero / None */
             coat_weight: 0.0,
-            coat_color: Color3::one(),
+            coat_color: Vec3::one(),
             coat_roughness: 0.1,
             coat_ior: 1.5,
 
@@ -128,12 +125,23 @@ impl Material {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Palette {
     pub materials: Vec<Material>,
+    pub graphs: Vec<NodeFXGraph>,
 }
 
 impl Default for Palette {
     fn default() -> Self {
+        let mut graphs = vec![];
+        for _ in 0..256 {
+            let mut graph = NodeFXGraph::default();
+            let mut node = NodeFX::new(NodeFXRole::Color);
+            node.position = Vec2::new(10, 10);
+            graph.nodes.push(node);
+            graphs.push(graph);
+        }
+
         Self {
             materials: vec![Material::default(); 256],
+            graphs,
         }
     }
 }

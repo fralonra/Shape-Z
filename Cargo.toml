@@ -15,7 +15,10 @@ path = "src/main.rs"
 rusterix = { version = "0.2.8", git = "https://github.com/markusmoenig/Rusterix" }
 # rusterix = { path = "../../Rusterix" }
 
-theframework = { version = "0.1.40", git = "https://github.com/markusmoenig/TheFramework", features = [
+# theframework = { version = "0.1.40", git = "https://github.com/markusmoenig/TheFramework", features = [
+#     "ui",
+# ], default-features = true }
+theframework = { path = "../TheFramework", features = [
     "ui",
 ], default-features = true }
 
