@@ -210,7 +210,7 @@ impl ModelEditor {
 
                             let hit_point: Option<Vec3<f32>> = match hit.hit {
                                 HitType::Outside => None,
-                                HitType::BBox((_t_near, t_far)) => None, //Some(ray.at(t_far)),
+                                HitType::BBox((_t_near, _t_far)) => None, //Some(ray.at(t_far)),
                                 HitType::Voxel(_) => Some(hit.hitpoint),
                             };
 
@@ -243,6 +243,7 @@ impl ModelEditor {
 
                             // println!("{:?}", hit_point);
                         }
+                        reset_render();
 
                         /*
                         grid.clear_preview();
@@ -276,8 +277,6 @@ impl ModelEditor {
                                 }
                             }
                         }*/
-
-                        reset_render();
                     }
                 }
             }

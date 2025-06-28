@@ -14,7 +14,7 @@ pub struct VoxelGrid {
 
 impl Default for VoxelGrid {
     fn default() -> Self {
-        Self::new([2.0, 2.0, 2.0], 96)
+        Self::new([10.0, 4.0, 10.0], 96)
     }
 }
 
@@ -157,12 +157,13 @@ impl VoxelGrid {
             r.map(|v| if l == v { 1.0 } else { 0.0 })
         }
 
-        let (t_min, t_max) = match ray.intersect_aabb(&self.bbox()) {
+        let (mut t_min, t_max) = match ray.intersect_aabb(&self.bbox()) {
             Some(b) => b,
             None => return HitRecord::default(),
         };
 
-        let mut t = t_min.max(0.0);
+        t_min = (t_min - 0.5).max(0.0);
+        let mut t = t_min;
 
         let ro = ray.at(t);
         let rd = ray.dir;

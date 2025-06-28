@@ -120,10 +120,11 @@ impl Tile {
     }
 
     pub fn dda(&self, ray: &Ray) -> Option<HitRecord> {
-        let (_, t_max) = ray.intersect_aabb(&self.bbox)?;
+        let (mut t_min, t_max) = ray.intersect_aabb(&self.bbox)?;
 
-        let mut t = 0.0; //t_min;
-        let ro = ray.origin;
+        t_min = (t_min - 0.5).max(0.0);
+
+        let ro = ray.at(t_min);
         let rd = ray.dir;
 
         #[inline(always)]
@@ -134,9 +135,9 @@ impl Tile {
         let mut i = ro.map(|v| v.floor());
         let srd = rd.map(|v| v.signum());
         let rdi = Vec3::broadcast(1.0) / (rd * 2.0);
-
         let mut normal = Vec3::zero();
 
+        let mut t = t_min;
         while t < t_max {
             let key = i.map(|v| v as i32);
 
@@ -144,7 +145,7 @@ impl Tile {
                 return Some(HitRecord {
                     hit: HitType::Voxel(material),
                     hitpoint: ray.at(t),
-                    distance: t,
+                    distance: t_min + t,
                     normal,
                     local_key: (key.x, key.y, key.z),
                     ..Default::default()

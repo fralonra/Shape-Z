@@ -147,8 +147,6 @@ impl TheTrait for Editor {
         let mut grid = VOXELGRID.write().unwrap();
         let bottom = -((grid.bounds[1] / 2.0) as i32);
 
-        println!("{}", bottom);
-
         for (index, tile) in &mut grid.tiles {
             if index.1 == bottom {
                 tile.add_floor();
