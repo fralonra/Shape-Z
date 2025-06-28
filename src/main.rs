@@ -48,6 +48,7 @@ pub mod prelude {
     pub use crate::{Color, F};
 
     pub use crate::voxel::camera::Camera;
+    pub use crate::voxel::camera::iso::Iso;
     pub use crate::voxel::camera::orbit::Orbit;
     pub use crate::voxel::camera::pinhole::Pinhole;
     pub use crate::voxel::grid::VoxelGrid;

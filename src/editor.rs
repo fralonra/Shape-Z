@@ -7,12 +7,12 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex, mpsc::Receiver};
 
+pub static CAMERA: LazyLock<Arc<RwLock<Box<dyn Camera>>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(Box::new(Orbit::new()))));
 pub static RENDERBUFFER: LazyLock<Arc<Mutex<RenderBuffer>>> =
     LazyLock::new(|| Arc::new(Mutex::new(RenderBuffer::new(100, 100))));
 pub static RENDERER: LazyLock<Arc<Box<dyn Renderer>>> =
     LazyLock::new(|| Arc::new(Box::new(PBR::new())));
-pub static CAMERA: LazyLock<Arc<RwLock<Box<dyn Camera>>>> =
-    LazyLock::new(|| Arc::new(RwLock::new(Box::new(Orbit::new()))));
 pub static VOXELGRID: LazyLock<Arc<RwLock<VoxelGrid>>> =
     LazyLock::new(|| Arc::new(RwLock::new(VoxelGrid::default())));
 pub static PALETTE: LazyLock<Arc<RwLock<Palette>>> =
@@ -144,11 +144,16 @@ impl TheTrait for Editor {
     }
 
     fn init(&mut self, _ctx: &mut TheContext) {
-        // let mut grid = VOXELGRID.write().unwrap();
+        let mut grid = VOXELGRID.write().unwrap();
+        let bottom = -((grid.bounds[1] / 2.0) as i32);
 
-        // for t in grid.tiles.values_mut() {
-        //     t.add_floor();
-        // }
+        println!("{}", bottom);
+
+        for (index, tile) in &mut grid.tiles {
+            if index.1 == bottom {
+                tile.add_floor();
+            }
+        }
 
         // grid.add_sphere(Vec3::new(0.0, 0.0, 0.0), 0.5, 2);
 

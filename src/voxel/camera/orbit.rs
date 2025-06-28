@@ -53,9 +53,14 @@ impl Camera for Orbit {
         self.elevation += delta.y * sensitivity;
 
         // Clamp elevation to avoid flipping (just below ±90°)
-        let epsilon = 0.01;
-        let max_elevation = std::f32::consts::FRAC_PI_2 - epsilon;
-        self.elevation = self.elevation.clamp(-max_elevation, max_elevation);
+        // let epsilon = 0.01;
+        // let max_elevation = std::f32::consts::FRAC_PI_2 - epsilon;
+        // self.elevation = self.elevation.clamp(-max_elevation, max_elevation);
+
+        let min_elevation = 0.01;
+        let max_elevation = std::f32::consts::FRAC_PI_2 - 0.01;
+
+        self.elevation = self.elevation.clamp(min_elevation, max_elevation);
     }
 
     /// Zoom the camera in or out based on vertical mouse delta
@@ -93,7 +98,7 @@ impl Camera for Orbit {
         // Now build the ray
         let pixel_ndc = Vec2::new(
             (pixel_size.x * offset.x + uv.x) * 2.0 - 1.0, // [-1..1]
-            (pixel_size.y * offset.y + uv.y) * 2.0 - 1.0,
+            (pixel_size.y * offset.y + (1.0 - uv.y)) * 2.0 - 1.0,
         );
 
         let dir = (forward + right * pixel_ndc.x * half_width - up * pixel_ndc.y * half_height) // ← minus Y because screen Y usually goes down

@@ -24,11 +24,31 @@ impl Tile {
     }
 
     pub fn add_floor(&mut self) {
+        let max_index = 15.0;
+
+        let size = self.density as f32;
+
         for x in 0..self.density {
             for z in 0..self.density {
-                self.set((x as i32, 0, z as i32), 200);
+                let xf = x as f32;
+                let zf = z as f32;
+
+                // Distance to nearest edge
+                let dx = xf.min(size - 1.0 - xf);
+                let dz = zf.min(size - 1.0 - zf);
+                let d = dx.min(dz);
+
+                // Normalize distance to [0.0, 1.0]
+                let max_dist = (size - 1.0) / 2.0;
+                let norm = (1.0 - d / max_dist).clamp(0.0, 1.0);
+
+                // Spread index linearly from border (0) to center (15)
+                let index = (norm * max_index).round() as u8;
+
+                self.set((x as i32, 0, z as i32), index);
             }
         }
+
         self.update_bbox();
     }
 

@@ -121,7 +121,10 @@ impl ModelEditor {
                                     continue;
                                 }
 
-                                let uv = Vec2::new(x as F / screen_size.x, y as F / screen_size.y);
+                                let uv = Vec2::new(
+                                    x as F / screen_size.x,
+                                    1.0 - (y as F / screen_size.y),
+                                );
 
                                 let p = renderer.render(
                                     uv,
@@ -167,7 +170,7 @@ impl ModelEditor {
         let mut redraw = false;
         match event {
             TheEvent::Copy => {}
-            TheEvent::RenderViewClicked(id, coord) => {
+            TheEvent::RenderViewClicked(id, _) => {
                 if id.name == "ModelView" {
                     let grid = Arc::clone(&VOXELGRID);
                     let mut grid = grid.write().unwrap();
@@ -181,7 +184,7 @@ impl ModelEditor {
 
                         let uv = Vec2::new(
                             coord.x as f32 / dim.width as f32,
-                            coord.y as f32 / dim.height as f32,
+                            1.0 - (coord.y as f32 / dim.height as f32),
                         );
                         let camera = Arc::clone(&CAMERA);
                         let mut camera = camera.write().unwrap();
@@ -207,7 +210,7 @@ impl ModelEditor {
 
                             let hit_point: Option<Vec3<f32>> = match hit.hit {
                                 HitType::Outside => None,
-                                HitType::BBox((_t_near, t_far)) => Some(ray.at(t_far)),
+                                HitType::BBox((_t_near, t_far)) => None, //Some(ray.at(t_far)),
                                 HitType::Voxel(_) => Some(hit.hitpoint),
                             };
 
