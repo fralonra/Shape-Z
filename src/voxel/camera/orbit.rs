@@ -1,8 +1,6 @@
 use crate::prelude::*;
 use vek::{Vec2, Vec3};
 
-use crate::voxel::camera::Camera;
-
 pub struct Orbit {
     pub center: Vec3<F>,
     pub distance: F,

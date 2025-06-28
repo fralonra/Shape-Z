@@ -1,8 +1,6 @@
 use crate::prelude::*;
 use vek::{Vec2, Vec3};
 
-use crate::voxel::camera::Camera;
-
 pub struct Pinhole {
     pub origin: Vec3<F>,
     pub center: Vec3<F>,
