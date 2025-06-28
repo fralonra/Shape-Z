@@ -197,8 +197,10 @@ impl Palette {
 
             if idx < self.materials.len() {
                 self.materials[idx].base_color = Vec3::new(r, g, b);
-                // self.materials[idx].alpha = a; // if you keep alpha
-                // leave all other material fields unchanged
+                self.graphs[idx].nodes[0].values[0] = r;
+                self.graphs[idx].nodes[0].values[1] = g;
+                self.graphs[idx].nodes[0].values[2] = b;
+
                 idx += 1;
             } else {
                 break; // palette already full

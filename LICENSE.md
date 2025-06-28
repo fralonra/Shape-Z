@@ -37,7 +37,7 @@ This license allows:
 Please contact **Markus Moenig** at:
 
 📧 `markus@moenig.io`
-🌐 `https://shape-z.com` *(if applicable)*
+🌐 `https://shape-z.com`
 
 to request a commercial license and pricing information.
 

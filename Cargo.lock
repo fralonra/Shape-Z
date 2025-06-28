@@ -3291,7 +3291,7 @@ dependencies = [
 [[package]]
 name = "theframework"
 version = "0.1.40"
-source = "git+https://github.com/markusmoenig/TheFramework#cd784acbf9e73e4e953397c42b9c09967aed2429"
+source = "git+https://github.com/markusmoenig/TheFramework#27bb0cbf3e6e61a234179e67fcea6e2fc661d8b7"
 dependencies = [
  "aict",
  "arboard",
@@ -4693,8 +4693,3 @@ dependencies = [
  "ed25519-dalek",
  "thiserror 2.0.12",
 ]
-
-[[patch.unused]]
-name = "radium"
-version = "1.1.0"
-source = "git+https://github.com/youknowone/ferrilab?branch=fix-nightly#4a301c3a223e096626a2773d1a1eed1fc4e21140"

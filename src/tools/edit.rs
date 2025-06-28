@@ -33,7 +33,7 @@ impl Tool for EditTool {
         &mut self,
         event: &TheEvent,
         ui: &mut TheUI,
-        _ctx: &mut TheContext,
+        ctx: &mut TheContext,
         context: &mut Context,
     ) -> bool {
         let mut redraw = false;
@@ -47,6 +47,7 @@ impl Tool for EditTool {
                         NodeContext::Color(*index as u8),
                         palette.graphs[*index as usize].clone(),
                         ui,
+                        ctx,
                     );
                     redraw = true;
                 }

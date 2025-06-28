@@ -90,4 +90,31 @@ impl NodeFX {
             }
         }
     }
+
+    /// The parameters for the NodeFX
+    pub fn params(&self) -> Vec<NodeFXParam> {
+        let mut params = vec![];
+        match self.role {
+            Color => {
+                params.push(NodeFXParam::Color(
+                    "color".into(),
+                    "".into(),
+                    "Base color of the palette index".into(),
+                    TheColor::from(Vec3::new(self.values[0], self.values[1], self.values[2])),
+                ));
+            }
+        }
+        params
+    }
+
+    /// Evaluate the node in a material context
+    pub fn evaluate_material(&self, material: &mut Material, _graph_node: (&NodeFXGraph, usize)) {
+        match self.role {
+            Color => {
+                material.base_color[0] = self.values[0];
+                material.base_color[1] = self.values[1];
+                material.base_color[2] = self.values[2];
+            }
+        }
+    }
 }

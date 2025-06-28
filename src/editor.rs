@@ -449,9 +449,29 @@ impl TheTrait for Editor {
         top_canvas.bottom_is_expanding = true;
         top_canvas.set_bottom(toolbar_canvas);
 
+        // Nodes View
         let mut bottom_canvas = TheCanvas::new();
+
+        let mut shared_layout = TheSharedHLayout::new(TheId::named("Shared Panel Layout"));
+        shared_layout.set_shared_ratio(0.8);
+        shared_layout.set_mode(TheSharedHLayoutMode::Shared);
+
+        let mut node_canvas = TheCanvas::new();
         let node_view = TheNodeCanvasView::new(TheId::named("NodeView"));
-        bottom_canvas.set_widget(node_view);
+        node_canvas.set_widget(node_view);
+
+        let mut settings_canvas = TheCanvas::new();
+        let mut text_layout = TheTextLayout::new(TheId::named("Node Settings"));
+        // text_layout.limiter_mut().set_max_width(self.width);
+        text_layout.set_text_margin(20);
+        text_layout.set_text_align(TheHorizontalAlign::Right);
+        settings_canvas.set_layout(text_layout);
+
+        shared_layout.add_canvas(node_canvas);
+        shared_layout.add_canvas(settings_canvas);
+        bottom_canvas.set_layout(shared_layout);
+
+        //
 
         let mut vsplitlayout = TheSharedVLayout::new(TheId::named("Shared VLayout"));
         vsplitlayout.add_canvas(top_canvas);
@@ -563,6 +583,13 @@ impl TheTrait for Editor {
                 {
                     redraw = true;
                 }
+                if NODEEDITOR
+                    .write()
+                    .unwrap()
+                    .handle_event(&event, ui, ctx, &mut self.context)
+                {
+                    redraw = true;
+                }
                 #[allow(clippy::single_match)]
                 match &event {
                     TheEvent::Custom(id, _) => {
@@ -571,6 +598,10 @@ impl TheTrait for Editor {
                             let mut toollist = TOOLLIST.write().unwrap();
                             let id = toollist.tools[0].id().uuid;
                             toollist.set_tool(id, ui, ctx, &mut self.context);
+                            ctx.ui.send(TheEvent::PaletteIndexChanged(
+                                TheId::named("PalettePicker"),
+                                0,
+                            ));
                         }
                     }
                     TheEvent::StateChanged(id, _) => {
